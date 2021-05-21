@@ -6,7 +6,7 @@
         <div class="clearfix">
           <div class="float-start">
             <h5 class="card-title">{{ note.title }}</h5>
-            <h6 class="card-subtitle">{{ formatDate(note.date) }}</h6>
+            <h6 class="card-subtitle">{{ date() }}</h6>
           </div>
           <div class="dropdown">
             <a
@@ -40,10 +40,10 @@
         <div>{{ note.body }}</div>
         <div>
           <span
-            v-for="tag in note.tags"
-            :key="tag"
+            v-for="tag_str in note.tags_str"
+            :key="tag_str"
             class="border rounded text-white bg-secondary p-1 float-start"
-            >{{ tag }}</span
+            >{{ tag_str }}</span
           >
         </div>
       </div>
@@ -67,7 +67,7 @@
 
     <!-- エディタ -->
     <div :id="'editor' + note.id">
-      <Editor :note="note"></Editor>
+      <NoteEditor :note="note"></NoteEditor>
     </div>
   </div>
 </template>
@@ -75,12 +75,12 @@
 <script lang="ts">
 import { Options, Vue } from "vue-class-component";
 
-import { Note } from "../note"
-import Editor from "./Editor.vue"
+import { Note } from "../model"
+import NoteEditor from "./NoteEditor.vue"
 
 @Options({
   components: {
-    Editor,
+    NoteEditor,
   },
   props: {
     note: Note
@@ -89,13 +89,13 @@ import Editor from "./Editor.vue"
 export default class NoteCard extends Vue {
   note!: Note
 
-  formatDate(date: Date): string {
+  date(): string {
     let s = ''
-    s += date.getFullYear()
+    s += this.note.date.getFullYear()
     s += '/'
-    s += (date.getMonth() + 1)
+    s += (this.note.date.getMonth() + 1)
     s += '/'
-    s += date.getDate()
+    s += this.note.date.getDate()
 
     return s
   }

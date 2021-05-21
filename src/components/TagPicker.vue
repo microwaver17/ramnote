@@ -20,12 +20,11 @@
                   <div class="list-group" style="height: 50vh">
                     <a
                       v-for="tag in tagFiltered"
-                      :key="tag"
-                      :data-value="tag"
-                      @click="onClickRegisterdTag"
+                      :key="tag.id"
+                      @click="onClickRegisterdTag(tag)"
                       class="list-group-item list-group-item-action"
                     >
-                      {{ tag }}
+                      {{ tag.name }}
                     </a>
                   </div>
                 </div>
@@ -51,14 +50,13 @@
                 <div class="col-12">
                   <span
                     v-for="tag in modelValue"
-                    :key="tag"
+                    :key="tag.id"
                     class="border rounded bg-primary text-white p-2 float-start"
-                    >{{ tag }}
+                    >{{ tag.name }}
                     <button
                       class="btn-close btn-close-white"
                       style="font-size: 0.7em"
-                      :data-value="tag"
-                      @click="onClickRemoveTag"
+                      @click="onClickRemoveTag(tag)"
                     ></button>
                   </span>
                 </div>
@@ -78,6 +76,8 @@
 <script lang="ts">
 import { Options, Vue } from 'vue-class-component'
 import bootstrap from 'bootstrap'
+import { dao } from '../dao'
+import { Tag } from '../model'
 
 @Options({
   props: {
@@ -85,39 +85,35 @@ import bootstrap from 'bootstrap'
   }
 })
 export default class TagPicker extends Vue {
-  modelValue!: string[] // 選択中のタグ一覧
+  modelValue!: Tag[] // 選択中のタグ一覧
 
-  tagsRegistered: string[] = []
+  tags: Tag[] = []
   tagFilterKeyword = ''
 
-  get tagFiltered(): string[] {
-    return this.tagsRegistered.filter(tag => tag.includes(this.tagFilterKeyword))
+  get tagFiltered(): Tag[] {
+    return this.tags.filter(tag => tag.name.toLowerCase().includes(this.tagFilterKeyword.toLowerCase()))
   }
 
   // タグを追加する
-  onClickRegisterdTag(e: MouseEvent): void {
-    let target = e.target as HTMLElement
-    let tag = target.dataset.value
-    if (tag && !this.modelValue.includes(tag)) {
+  onClickRegisterdTag(tag: Tag): void {
+    if (!this.modelValue.includes(tag)) {
       this.modelValue.push(tag)
     }
   }
 
   // タグを選択から削除する
-  onClickRemoveTag(e: MouseEvent): void {
-    let target = e.target as HTMLElement
-    let tag = target.dataset.value
-    if (tag && this.modelValue.includes(tag)) {
-      let idx = this.modelValue.indexOf(tag)
-      this.modelValue.splice(idx)
-    }
+  onClickRemoveTag(tag: Tag): void {
+    let idx = this.modelValue.indexOf(tag)
+    this.modelValue.splice(idx, 1)
   }
 
   mounted(): void {
     // テストデータ
-    sampletags.forEach((tag) => {
-      this.tagsRegistered.push(tag)
-    })
+    // sampletags.forEach((tag) => {
+    //   this.tagsRegistered.push(tag)
+    // })
+    dao.getTags()
+      .then(tags => { this.tags = tags })
   }
 }
 

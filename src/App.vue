@@ -5,32 +5,30 @@
       <div id="sidebar" class="col-3 col-xl-3 col-xxl-2">
         <h2>RAMNOTE</h2>
 
-        <form>
-          <input class="form-control" type="text" />
-          <button class="form-control">Search</button>
+        <input class="form-control" type="text" />
+        <button class="form-control">Search</button>
 
-          <label class="form-label">Tags</label>
-          <input
-            id="formTags"
-            class="form-control"
-            type="text"
-            :value="query_tags_str()"
-          />
+        <label class="form-label">Tags</label>
+        <input
+          id="formTags"
+          class="form-control"
+          type="text"
+          :value="query_tags_str()"
+        />
 
-          <label class="form-label">From</label>
-          <input class="form-control" type="date" />
+        <label class="form-label">From</label>
+        <input class="form-control" type="date" />
 
-          <label class="form-label">To</label>
-          <input class="form-control" type="date" />
+        <label class="form-label">To</label>
+        <input class="form-control" type="date" />
 
-          <button
-            class="form-control"
-            data-bs-toggle="modal"
-            data-bs-target="#editorCreate .modal"
-          >
-            Add
-          </button>
-        </form>
+        <button
+          class="form-control"
+          data-bs-toggle="modal"
+          data-bs-target="#editorCreate .modal"
+        >
+          Add
+        </button>
       </div>
 
       <!-- ノート一覧 -->
@@ -48,7 +46,6 @@
 
     <!-- タグ選択画面 -->
     <div id="tagPickerQuery">
-      >
       <TagPicker v-model="query_tags"></TagPicker>
     </div>
 
@@ -63,10 +60,11 @@
 import { Options, Vue } from "vue-class-component";
 import bootstrap from "bootstrap"
 
-import { Note } from "./note"
 import NoteCard from "./components/NoteCard.vue"
 import TagPicker from "./components/TagPicker.vue"
-import Editor from "./components/Editor.vue"
+import Editor from "./components/NoteEditor.vue"
+import { Note, Tag } from "./model"
+import { dao } from "./dao"
 
 @Options({
   components: {
@@ -77,14 +75,10 @@ import Editor from "./components/Editor.vue"
 })
 export default class App extends Vue {
   notes: Note[] = []  // 表示するノート
-  newNote = new Note()
+  newNote = Note.empty()
 
-  query_tags: string[] = ['test1', 'asldk']
-  query_tags_str = () => this.query_tags.join(' ')
-
-  emptyNote(): Note {
-    return new Note()
-  }
+  query_tags: Tag[] = []
+  query_tags_str = () => this.query_tags.map(tag => tag.name).join(' ')
 
   mounted(): void {
     // タグ入力フォームをクリックすると、タグ選択画面を開く
@@ -105,10 +99,18 @@ export default class App extends Vue {
     }
 
     // サンプルデータを設定
-    this.notes = []
-    samplenotes.forEach((note) => {
-      this.notes.push(note)
-    })
+    // this.notes = []
+    // samplenotes.forEach((note) => {
+    //   this.notes.push(note)
+    // })
+
+    dao.getNotes()
+      .then(notes => {
+        notes.forEach(note => {
+          this.notes.push(note)
+        })
+      })
+
   }
 }
 
@@ -117,29 +119,29 @@ let samplenotes: Note[] = [
     id: '0',
     title: 'asdf',
     body: 'fwfgxfgvf',
-    date: new Date(1990, 2, 1),
-    tags: ['67375', '34653',]
+    date: new Date(124),
+    tags_str: ['67375', '34653',]
   },
   {
     id: '1',
     title: 'kiuitglor',
     body: 'wery45ujrf',
-    date: new Date(1990, 2, 1),
-    tags: ['735', '6704',]
+    date: new Date(3245),
+    tags_str: ['735', '6704',]
   },
   {
     id: '2',
     title: 'dsgwet45j',
     body: 'syrtqt43w',
-    date: new Date(1990, 2, 1),
-    tags: ['53546', '4376',]
+    date: new Date(876),
+    tags_str: ['53546', '4376',]
   },
   {
     id: '3',
     title: 'sbdfhjdt',
     body: 'ear54hss',
-    date: new Date(1990, 2, 1),
-    tags: ['3764', '556798',]
+    date: new Date(5638),
+    tags_str: ['3764', '556798',]
   },
 ]
 

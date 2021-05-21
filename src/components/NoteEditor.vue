@@ -49,14 +49,13 @@
     </div>
     <!-- タグ選択画面 -->
     <div :id="'tagPicker' + id()">
-      >
       <TagPicker v-model="note.tags"></TagPicker>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { Note } from '../note';
+import { Note } from '../model';
 import { Vue, Options } from 'vue-class-component'
 import TagPicker from './TagPicker.vue'
 import bootstrap from "bootstrap"
@@ -69,7 +68,7 @@ import bootstrap from "bootstrap"
     note: Note
   }
 })
-export default class Editor extends Vue {
+export default class NoteEditor extends Vue {
   note!: Note
 
   id(): string {
@@ -100,7 +99,7 @@ export default class Editor extends Vue {
     if (!this.note.id) {
       return ''
     }
-    return this.note.tags.join(' ')
+    return this.note.tags_str.join(' ')
   }
 }
 </script>
