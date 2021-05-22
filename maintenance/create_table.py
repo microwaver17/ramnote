@@ -25,7 +25,8 @@ if __name__ == '__main__':
                 title TEXT NOT NULL,
                 body TEXT NOT NULL,
                 date INTEGER NOT NULL,
-                tags TEXT NOT NULL
+                tags TEXT NOT NULL,
+                deleted INTEGER NOT NULL DEFAULT 0
             )
         """)
 
