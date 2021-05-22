@@ -1,7 +1,7 @@
 // ノートの定義
 export class Note {
     constructor(
-        public id: string | null,
+        public id: number | null,
         public title: string,
         public body: string,
         public date: Date,
@@ -16,7 +16,7 @@ export class Note {
 // タグの定義
 export class Tag {
     constructor(
-        public id: string | null,
+        public id: number | null,
         public name: string
     ) { }
 

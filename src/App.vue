@@ -13,7 +13,8 @@
           id="formTags"
           class="form-control"
           type="text"
-          :value="query_tags_str()"
+          :value="query_tags_str"
+          @click="onClickTagForm"
         />
 
         <label class="form-label">From</label>
@@ -22,36 +23,37 @@
         <label class="form-label">To</label>
         <input class="form-control" type="date" />
 
-        <button
-          class="form-control"
-          data-bs-toggle="modal"
-          data-bs-target="#editorCreate .modal"
-        >
-          Add
-        </button>
+        <button class="form-control" @click="onClickAdd">Add</button>
       </div>
 
       <!-- ノート一覧 -->
       <div id="contents" class="col-9 col-xl-9 col-xxl-10 ms-auto">
         <div class="row justify-content-center">
           <NoteCard
+            class="col-5 col-xl-4 col-xxl-2 m-2"
             v-for="note in notes"
             :key="note.id"
             :note="note"
-            class="col-5 col-xl-4 col-xxl-2 m-2"
+            @edit="onEditNote"
           ></NoteCard>
         </div>
       </div>
     </div>
 
-    <!-- タグ選択画面 -->
-    <div id="tagPickerQuery">
-      <TagPicker v-model="query_tags"></TagPicker>
-    </div>
+    <div>
+      <!-- 検索用タグ選択画面 -->
+      <div id="tagPickerQuery">
+        <TagPicker v-model:tags="query_tags"></TagPicker>
+      </div>
 
-    <!-- エディタ -->
-    <div id="editorCreate">
-      <Editor :note="newNote"></Editor>
+      <!-- ノート新規作成エディタ -->
+      <div id="editorCreate">
+        <NoteEditor :note="newNote"></NoteEditor>
+      </div>
+      <!-- ノート更新エディタ -->
+      <div id="editorUpdate">
+        <NoteEditor :note="editNote"></NoteEditor>
+      </div>
     </div>
   </div>
 </template>
@@ -62,88 +64,75 @@ import bootstrap from "bootstrap"
 
 import NoteCard from "./components/NoteCard.vue"
 import TagPicker from "./components/TagPicker.vue"
-import Editor from "./components/NoteEditor.vue"
+import NoteEditor from "./components/NoteEditor.vue"
 import { Note, Tag } from "./model"
 import { dao } from "./dao"
+import { dummyNotes } from "./consts"
 
 @Options({
   components: {
     NoteCard,
     TagPicker,
-    Editor,
+    NoteEditor,
   },
 })
 export default class App extends Vue {
   notes: Note[] = []  // 表示するノート
-  newNote = Note.empty()
-
+  newNote: Note | null = null
+  editNote: Note | null = null
   query_tags: Tag[] = []
-  query_tags_str = () => this.query_tags.map(tag => tag.name).join(' ')
+
+  beforeCreate() {
+    this.query_tags = []
+  }
+
+  // タグをスペースで結合した形式に変換
+  get query_tags_str() {
+    return this.query_tags.map(tag => tag.name).join(' ')
+  }
+
+  // タグ選択フォームがクリックされた時
+  onClickTagForm(e: MouseEvent) {
+    e.preventDefault();
+    (e.target as HTMLElement).blur()
+
+    // ダイアログを開く
+    const tagPicker = document.querySelector('#tagPickerQuery .modal')
+    if (tagPicker) {
+      let modal = new bootstrap.Modal(tagPicker)
+      modal.show()
+    }
+  }
+
+  onClickAdd(e: MouseEvent) {
+    this.newNote = Note.empty()
+    const editor = document.querySelector('#editorCreate .modal')
+    if (editor) {
+      let modal = new bootstrap.Modal(editor)
+      modal.show()
+    }
+  }
+
+  onEditNote(note: Note) {
+    this.editNote = note
+    const editor = document.querySelector('#editorUpdate .modal')
+    if (editor) {
+      let modal = new bootstrap.Modal(editor)
+      modal.show()
+    }
+  }
 
   mounted(): void {
-    // タグ入力フォームをクリックすると、タグ選択画面を開く
-    const formTags = document.getElementById('formTags')
-    if (formTags) {
-      formTags.addEventListener('click', (e) => {
-        e.preventDefault()
-        formTags.blur()
-
-        // ダイアログを開く
-        const tagPicker = document.querySelector('#tagPickerQuery .modal')
-        if (tagPicker) {
-          console.log(tagPicker)
-          let modal = new bootstrap.Modal(tagPicker)
-          modal.show()
+    dao.getNotes()
+      .then(notes => this.notes = notes)
+      .catch(err => {
+        // 開発環境の場合は、ダミーデータを表示
+        if (process.env.NODE_ENV == 'development') {
+          this.notes = dummyNotes.slice()
         }
       })
-    }
-
-    // サンプルデータを設定
-    // this.notes = []
-    // samplenotes.forEach((note) => {
-    //   this.notes.push(note)
-    // })
-
-    dao.getNotes()
-      .then(notes => {
-        notes.forEach(note => {
-          this.notes.push(note)
-        })
-      })
-
   }
 }
-
-let samplenotes: Note[] = [
-  {
-    id: '0',
-    title: 'asdf',
-    body: 'fwfgxfgvf',
-    date: new Date(124),
-    tags_str: ['67375', '34653',]
-  },
-  {
-    id: '1',
-    title: 'kiuitglor',
-    body: 'wery45ujrf',
-    date: new Date(3245),
-    tags_str: ['735', '6704',]
-  },
-  {
-    id: '2',
-    title: 'dsgwet45j',
-    body: 'syrtqt43w',
-    date: new Date(876),
-    tags_str: ['53546', '4376',]
-  },
-  {
-    id: '3',
-    title: 'sbdfhjdt',
-    body: 'ear54hss',
-    date: new Date(5638),
-    tags_str: ['3764', '556798',]
-  },
-]
 
 </script>
 

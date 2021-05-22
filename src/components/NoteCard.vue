@@ -6,7 +6,7 @@
         <div class="clearfix">
           <div class="float-start">
             <h5 class="card-title">{{ note.title }}</h5>
-            <h6 class="card-subtitle">{{ date() }}</h6>
+            <h6 class="card-subtitle">{{ date }}</h6>
           </div>
           <div class="dropdown">
             <a
@@ -19,12 +19,7 @@
             <!-- ドロップダウンメニュー -->
             <ul class="dropdown-menu" aria-labelledby="menu">
               <li>
-                <a
-                  class="dropdown-item"
-                  data-bs-toggle="modal"
-                  :data-bs-target="'#editor' + note.id + ' .modal'"
-                  >Edit</a
-                >
+                <a class="dropdown-item" @click="onClickEdit">Edit</a>
               </li>
               <li>
                 <a
@@ -59,15 +54,16 @@
             <button data-bs-dismiss="modal" class="btn btn-primary">
               Cancel
             </button>
-            <button data-bs-dismiss="modal" class="btn btn-danger">OK</button>
+            <button
+              data-bs-dismiss="modal"
+              class="btn btn-danger"
+              @click="onClickDelete"
+            >
+              OK
+            </button>
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- エディタ -->
-    <div :id="'editor' + note.id">
-      <NoteEditor :note="note"></NoteEditor>
     </div>
   </div>
 </template>
@@ -79,6 +75,7 @@ import { Note } from "../model"
 import NoteEditor from "./NoteEditor.vue"
 
 @Options({
+  emits: ['edit', 'delete'],
   components: {
     NoteEditor,
   },
@@ -89,15 +86,22 @@ import NoteEditor from "./NoteEditor.vue"
 export default class NoteCard extends Vue {
   note!: Note
 
-  date(): string {
-    let s = ''
-    s += this.note.date.getFullYear()
-    s += '/'
-    s += (this.note.date.getMonth() + 1)
-    s += '/'
-    s += this.note.date.getDate()
+  get date(): string {
+    let s = '' +
+      this.note.date.getFullYear() +
+      '/' +
+      (this.note.date.getMonth() + 1) +
+      '/' +
+      this.note.date.getDate()
 
     return s
+  }
+
+  onClickEdit() {
+    this.$emit('edit', this.note)
+  }
+  onClickDelete() {
+    this.$emit('delete', this.note)
   }
 }
 </script>

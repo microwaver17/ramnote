@@ -1,11 +1,12 @@
 <!-- タグ選択ダイアログ -->
 <template>
   <div>
-    <div class="modal" tabindex="-1">
+    <div class="modal" tabindex="-1" v-if="tags">
       <div
         class="
           modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg
         "
+        style="z-index: 2010"
       >
         <div class="modal-content">
           <div class="modal-header">
@@ -49,7 +50,7 @@
               <div class="row border-top mt-3 pt-4 mb-2">
                 <div class="col-12">
                   <span
-                    v-for="tag in modelValue"
+                    v-for="tag in tags"
                     :key="tag.id"
                     class="border rounded bg-primary text-white p-2 float-start"
                     >{{ tag.name }}
@@ -78,33 +79,37 @@ import { Options, Vue } from 'vue-class-component'
 import bootstrap from 'bootstrap'
 import { dao } from '../dao'
 import { Tag } from '../model'
+import { dummyTags } from '../consts'
 
 @Options({
   props: {
-    modelValue: Array
+    tags: {
+      type: Array,
+      default: []
+    }
   }
 })
 export default class TagPicker extends Vue {
-  modelValue!: Tag[] // 選択中のタグ一覧
+  tags!: Tag[] // 選択中のタグ一覧
 
-  tags: Tag[] = []
+  availableTags: Tag[] = []
   tagFilterKeyword = ''
 
   get tagFiltered(): Tag[] {
-    return this.tags.filter(tag => tag.name.toLowerCase().includes(this.tagFilterKeyword.toLowerCase()))
+    return this.availableTags.filter(tag => tag.name.toLowerCase().includes(this.tagFilterKeyword.toLowerCase()))
   }
 
   // タグを追加する
   onClickRegisterdTag(tag: Tag): void {
-    if (!this.modelValue.includes(tag)) {
-      this.modelValue.push(tag)
+    if (!this.tags.includes(tag)) {
+      this.tags.push(tag)
     }
   }
 
   // タグを選択から削除する
   onClickRemoveTag(tag: Tag): void {
-    let idx = this.modelValue.indexOf(tag)
-    this.modelValue.splice(idx, 1)
+    let idx = this.tags.indexOf(tag)
+    this.tags.splice(idx, 1)
   }
 
   mounted(): void {
@@ -113,7 +118,12 @@ export default class TagPicker extends Vue {
     //   this.tagsRegistered.push(tag)
     // })
     dao.getTags()
-      .then(tags => { this.tags = tags })
+      .then(tags => { this.availableTags = tags })
+      .catch(err => {
+        if (process.env.NODE_ENV == 'development') {
+          this.availableTags = dummyTags.slice()
+        }
+      })
   }
 }
 

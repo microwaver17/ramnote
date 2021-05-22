@@ -5,13 +5,15 @@
       data-bs-backdrop="static"
       data-bs-keyboard="false"
       tabindex="-1"
+      style="z-index: 2000"
+      :data-uid="uid"
     >
       <div
         class="
           modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg
         "
       >
-        <div class="modal-content">
+        <div class="modal-content" v-if="note">
           <div class="modal-header">
             <div class="modal-body">
               <div>
@@ -25,10 +27,11 @@
                 ></textarea>
                 <label>Tags</label>
                 <input
-                  :id="'formTags' + id()"
+                  :name="'formTags'"
                   type="text"
                   class="form-control"
-                  :value="joinedTags()"
+                  :value="joinedTags"
+                  @click="onClickTagForm"
                 />
               </div>
             </div>
@@ -47,18 +50,22 @@
         </div>
       </div>
     </div>
-    <!-- タグ選択画面 -->
-    <div :id="'tagPicker' + id()">
-      <TagPicker v-model="note.tags"></TagPicker>
+    <!-- エディタ用タグ選択画面 -->
+    <!--
+    <div id="tagPickerEditer">
+      <TagPicker v-model:tags="query_tags"></TagPicker>
     </div>
+    -->
   </div>
 </template>
 
 <script lang="ts">
-import { Note } from '../model';
-import { Vue, Options } from 'vue-class-component'
-import TagPicker from './TagPicker.vue'
 import bootstrap from "bootstrap"
+import { Vue, Options } from 'vue-class-component'
+
+import { Note } from '../model';
+import TagPicker from './TagPicker.vue'
+import { util } from '../util'
 
 @Options({
   components: {
@@ -70,32 +77,32 @@ import bootstrap from "bootstrap"
 })
 export default class NoteEditor extends Vue {
   note!: Note
+  uid = util.uid()
 
-  id(): string {
-    return this.note.id ?? 'null'
-  }
+  onClickTagForm(e: MouseEvent) {
+    e.preventDefault();
+    (e.target as HTMLElement).blur()
 
-  mounted(): void {
-    // タグ入力フォームをクリックすると、タグ選択画面を開く
-    const formTags = document.getElementById('formTags' + this.id())
-    if (formTags) {
-      formTags.addEventListener('click', (e) => {
-        e.preventDefault()
-        formTags.blur()
-
-        // ダイアログを開く
-        const tagPicker = document.querySelector(
-          '#tagPicker' + this.id() + ' .modal')
-        if (tagPicker) {
-          console.log(tagPicker)
-          let modal = new bootstrap.Modal(tagPicker)
-          modal.show()
-        }
-      })
+    // 自分を閉じる
+    const self = document.querySelector(`.modal[data-uid="${this.uid}"]`)
+    if (!self) {
+      return
     }
+    console.log('-----')
+    const selfModal = new bootstrap.Modal(self)
+    selfModal.hide()
+
+    // ダイアログを開く
+    const tagPicker = document.querySelector('#tagPickerEditer .modal')
+    if (!tagPicker) {
+      return
+    }
+    let modal = new bootstrap.Modal(tagPicker)
+    modal.show()
+
   }
 
-  joinedTags(): string {
+  get joinedTags(): string {
     if (!this.note.id) {
       return ''
     }
