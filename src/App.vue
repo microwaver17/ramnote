@@ -5,6 +5,9 @@
       <div id="sidebar" class="col-3 col-xl-3 col-xxl-2">
         <h2>RAMNOTE</h2>
 
+        <button class="form-control" @click="showEditorCreate">Add</button>
+
+        <label class="form-label">Keyword</label>
         <input class="form-control" type="text" />
         <button class="form-control">Search</button>
 
@@ -14,7 +17,7 @@
           class="form-control"
           type="text"
           :value="query_tags_str"
-          @click="onClickTagForm"
+          @click="openTagPicker"
         />
 
         <label class="form-label">From</label>
@@ -22,37 +25,69 @@
 
         <label class="form-label">To</label>
         <input class="form-control" type="date" />
-
-        <button class="form-control" @click="onClickAdd">Add</button>
       </div>
 
-      <!-- ノート一覧 -->
+      <!-- メインカラム -->
       <div id="contents" class="col-9 col-xl-9 col-xxl-10 ms-auto">
-        <div class="row justify-content-center">
-          <NoteCard
-            class="col-5 col-xl-4 col-xxl-2 m-2"
-            v-for="note in notes"
-            :key="note.id"
-            :note="note"
-            @edit="onEditNote"
-          ></NoteCard>
+        <!-- アラート -->
+        <div class="alert alert-success" v-show="successMsg">
+          {{ successMsg }}
+        </div>
+        <div class="alert alert-danger" v-show="errorMsg">
+          {{ errorMsg }}
+        </div>
+
+        <!-- ノート一覧画面 -->
+        <div v-if="currentTab == 'notelist'">
+          <div class="row justify-content-center">
+            <NoteCard
+              class="col-5 col-xl-4 col-xxl-2 m-2"
+              v-for="note in notes"
+              :key="note.id"
+              :note="note"
+              @edit="showEditPage"
+              @delete="comfirmDeleteNote"
+            ></NoteCard>
+          </div>
+        </div>
+
+        <!-- ノート作成画面 -->
+        <div v-if="currentTab == 'editor'">
+          <NoteEditor
+            :note="editNote"
+            @cancel="currentTab = 'notelist'"
+            @create="commitCreate"
+            @update="commitUpdate"
+          ></NoteEditor>
         </div>
       </div>
     </div>
 
-    <div>
-      <!-- 検索用タグ選択画面 -->
-      <div id="tagPickerQuery">
-        <TagPicker v-model:tags="query_tags"></TagPicker>
-      </div>
+    <!-- 検索用タグ選択画面 -->
+    <div id="tagPickerQuery">
+      <TagPicker v-model:tags="query_tags"></TagPicker>
+    </div>
 
-      <!-- ノート新規作成エディタ -->
-      <div id="editorCreate">
-        <NoteEditor :note="newNote"></NoteEditor>
-      </div>
-      <!-- ノート更新エディタ -->
-      <div id="editorUpdate">
-        <NoteEditor :note="editNote"></NoteEditor>
+    <!-- 削除確認ダイアログ -->
+    <div id="deleteDialog" class="modal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-body">
+            <p>削除してもよろしいですか？</p>
+          </div>
+          <div class="modal-footer">
+            <button data-bs-dismiss="modal" class="btn btn-primary">
+              Cancel
+            </button>
+            <button
+              data-bs-dismiss="modal"
+              class="btn btn-danger"
+              @click="commitDelete"
+            >
+              OK
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -65,7 +100,7 @@ import bootstrap from "bootstrap"
 import NoteCard from "./components/NoteCard.vue"
 import TagPicker from "./components/TagPicker.vue"
 import NoteEditor from "./components/NoteEditor.vue"
-import { Note, Tag } from "./model"
+import { Note, Tag } from "./models"
 import { dao } from "./dao"
 import { dummyNotes } from "./consts"
 
@@ -78,12 +113,20 @@ import { dummyNotes } from "./consts"
 })
 export default class App extends Vue {
   notes: Note[] = []  // 表示するノート
-  newNote: Note | null = null
   editNote: Note | null = null
   query_tags: Tag[] = []
+  currentTab = 'notelist'  // メインカラムに表示するもの
+  // 以下が空文字以外のときアラート表示
+  successMsg = ''
+  errorMsg = ''
 
-  beforeCreate() {
-    this.query_tags = []
+  flashError(msg: string, time = 3) {
+    this.errorMsg = msg
+    setTimeout((() => this.errorMsg = ''), 3000)
+  }
+  flashSuccess(msg: string, time = 3) {
+    this.successMsg = msg
+    setTimeout((() => this.successMsg = ''), 3000)
   }
 
   // タグをスペースで結合した形式に変換
@@ -92,7 +135,7 @@ export default class App extends Vue {
   }
 
   // タグ選択フォームがクリックされた時
-  onClickTagForm(e: MouseEvent) {
+  openTagPicker(e: MouseEvent) {
     e.preventDefault();
     (e.target as HTMLElement).blur()
 
@@ -104,22 +147,32 @@ export default class App extends Vue {
     }
   }
 
-  onClickAdd(e: MouseEvent) {
-    this.newNote = Note.empty()
-    const editor = document.querySelector('#editorCreate .modal')
-    if (editor) {
-      let modal = new bootstrap.Modal(editor)
+  showNoteList(e: MouseEvent) {
+    this.currentTab = 'notelist'
+  }
+
+  showEditorCreate(e: MouseEvent) {
+    this.editNote = Note.empty()
+    this.currentTab = 'editor'
+  }
+
+  showEditPage(note: Note) {
+    this.editNote = note
+    console.log(note)
+    this.currentTab = 'editor'
+  }
+
+  comfirmDeleteNote(note: Note) {
+    // ダイアログを開く
+    const dialog = document.querySelector('#deleteDialog')
+    if (dialog) {
+      let modal = new bootstrap.Modal(dialog)
       modal.show()
     }
   }
 
-  onEditNote(note: Note) {
-    this.editNote = note
-    const editor = document.querySelector('#editorUpdate .modal')
-    if (editor) {
-      let modal = new bootstrap.Modal(editor)
-      modal.show()
-    }
+  commitDelete() {
+    this.flashSuccess('削除しました')
   }
 
   mounted(): void {

@@ -22,7 +22,7 @@
                     <a
                       v-for="tag in tagFiltered"
                       :key="tag.id"
-                      @click="onClickRegisterdTag(tag)"
+                      @click="addTag(tag)"
                       class="list-group-item list-group-item-action"
                     >
                       {{ tag.name }}
@@ -57,7 +57,7 @@
                     <button
                       class="btn-close btn-close-white"
                       style="font-size: 0.7em"
-                      @click="onClickRemoveTag(tag)"
+                      @click="removeTag(tag)"
                     ></button>
                   </span>
                 </div>
@@ -78,7 +78,7 @@
 import { Options, Vue } from 'vue-class-component'
 import bootstrap from 'bootstrap'
 import { dao } from '../dao'
-import { Tag } from '../model'
+import { Tag } from '../models'
 import { dummyTags } from '../consts'
 
 @Options({
@@ -100,23 +100,19 @@ export default class TagPicker extends Vue {
   }
 
   // タグを追加する
-  onClickRegisterdTag(tag: Tag): void {
+  addTag(tag: Tag): void {
     if (!this.tags.includes(tag)) {
       this.tags.push(tag)
     }
   }
 
   // タグを選択から削除する
-  onClickRemoveTag(tag: Tag): void {
+  removeTag(tag: Tag): void {
     let idx = this.tags.indexOf(tag)
     this.tags.splice(idx, 1)
   }
 
   mounted(): void {
-    // テストデータ
-    // sampletags.forEach((tag) => {
-    //   this.tagsRegistered.push(tag)
-    // })
     dao.getTags()
       .then(tags => { this.availableTags = tags })
       .catch(err => {
@@ -126,20 +122,6 @@ export default class TagPicker extends Vue {
       })
   }
 }
-
-let sampletags: string[] = [
-  'movie',
-  'cinema',
-  'music',
-  'manga',
-  'japan',
-  'uk',
-  'united states of america',
-  'cacao72',
-  'furuhata',
-  'drama',
-  'theksd'
-]
 </script>
 
 <style scoped>

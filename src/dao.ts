@@ -1,7 +1,7 @@
 import axios, { AxiosResponse } from 'axios'
 
 import { config } from './config'
-import { Note, Tag } from './model'
+import { Note, Tag } from './models'
 
 const api = config.apiRoot
 
@@ -30,7 +30,7 @@ export const dao = Object.freeze({
                     (res.data as []).forEach(note => {
                         // DB格納形式とJS格納形式の変換
                         const date = new Date(note['date'])
-                        const tags = (note['tags'] as string).split(',')
+                        const tags = (note['tags'] as []).map(tag => new Tag(tag['id'], tag['name']))
                         notes.push(new Note(note['id'], note['title'], note['body'], date, tags))
                     })
                     resolve(notes)

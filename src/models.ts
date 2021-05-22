@@ -5,7 +5,7 @@ export class Note {
         public title: string,
         public body: string,
         public date: Date,
-        public tags_str: string[],
+        public tags: Tag[],
     ) { }
 
     static empty(): Note {

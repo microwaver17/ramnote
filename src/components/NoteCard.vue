@@ -19,15 +19,10 @@
             <!-- ドロップダウンメニュー -->
             <ul class="dropdown-menu" aria-labelledby="menu">
               <li>
-                <a class="dropdown-item" @click="onClickEdit">Edit</a>
+                <a class="dropdown-item" @click="emitEdit">Edit</a>
               </li>
               <li>
-                <a
-                  class="dropdown-item"
-                  data-bs-toggle="modal"
-                  data-bs-target="#deletemodal"
-                  >Delete</a
-                >
+                <a class="dropdown-item" @click="emitDelete">Delete</a>
               </li>
             </ul>
           </div>
@@ -35,33 +30,11 @@
         <div>{{ note.body }}</div>
         <div>
           <span
-            v-for="tag_str in note.tags_str"
-            :key="tag_str"
+            v-for="tag in note.tags"
+            :key="tag.id"
             class="border rounded text-white bg-secondary p-1 float-start"
-            >{{ tag_str }}</span
+            >{{ tag.name }}</span
           >
-        </div>
-      </div>
-    </div>
-
-    <div id="deletemodal" class="modal" tabindex="-1">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-body">
-            <p>削除してもよろしいですか？</p>
-          </div>
-          <div class="modal-footer">
-            <button data-bs-dismiss="modal" class="btn btn-primary">
-              Cancel
-            </button>
-            <button
-              data-bs-dismiss="modal"
-              class="btn btn-danger"
-              @click="onClickDelete"
-            >
-              OK
-            </button>
-          </div>
         </div>
       </div>
     </div>
@@ -71,7 +44,7 @@
 <script lang="ts">
 import { Options, Vue } from "vue-class-component";
 
-import { Note } from "../model"
+import { Note } from "../models"
 import NoteEditor from "./NoteEditor.vue"
 
 @Options({
@@ -97,10 +70,10 @@ export default class NoteCard extends Vue {
     return s
   }
 
-  onClickEdit() {
+  emitEdit() {
     this.$emit('edit', this.note)
   }
-  onClickDelete() {
+  emitDelete() {
     this.$emit('delete', this.note)
   }
 }
