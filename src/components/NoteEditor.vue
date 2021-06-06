@@ -11,7 +11,6 @@
       ></textarea>
       <label>Tags</label>
       <input
-        :name="'formTags'"
         type="text"
         class="form-control"
         :value="joinedTags"
@@ -52,7 +51,10 @@ import { util } from '../util'
 })
 export default class NoteEditor extends Vue {
   note!: Note
-  uid = util.uid()
+
+  get joinedTags(): string {
+    return this.note.tags.map(tag => tag.name).join(' ')
+  }
 
   openTagPicker(e: MouseEvent) {
     e.preventDefault();
@@ -65,13 +67,6 @@ export default class NoteEditor extends Vue {
     }
     let modal = new bootstrap.Modal(tagPicker)
     modal.show()
-  }
-
-  get joinedTags(): string {
-    if (this.note.id == null) {
-      return ''
-    }
-    return this.note.tags.map(tag => tag.name).join(' ')
   }
 
   cancelEdit() {

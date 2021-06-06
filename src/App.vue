@@ -158,12 +158,11 @@ export default class App extends Vue {
 
   showEditPage(note: Note) {
     this.editNote = note
-    console.log(note)
     this.currentTab = 'editor'
   }
 
   comfirmDeleteNote(note: Note) {
-    // ダイアログを開く
+    // 削除確認ダイアログを開く
     const dialog = document.querySelector('#deleteDialog')
     if (dialog) {
       let modal = new bootstrap.Modal(dialog)
@@ -173,6 +172,20 @@ export default class App extends Vue {
 
   commitDelete() {
     this.flashSuccess('削除しました')
+  }
+  commitCreate() {
+    if (this.editNote && !this.editNote.id) {
+      dao.createNotes(this.editNote)
+        .then(res => {
+          this.flashSuccess('追加しました')
+        }).catch(err => {
+          this.flashSuccess('失敗しました\n' + err.result)
+          console.log(err)
+        })
+    }
+  }
+  commitUpdate() {
+    this.flashSuccess('追加しました')
   }
 
   mounted(): void {
