@@ -22,12 +22,16 @@
         <button class="btn btn-primary" @click="emitCreate">Create</button>
       </div>
       <div v-else>
-        <button class="btn btn-primary" @clic="emitUpdate">Update</button>
+        <button class="btn btn-primary" @click="emitUpdate">Update</button>
       </div>
 
       <!-- タグ選択画面 -->
       <div id="tagPickerEditer">
-        <TagPicker v-model:tags="note.tags"></TagPicker>
+        <TagPicker
+          :tags="note.tags"
+          :visible="isOpenTagPicker"
+          @close="isOpenTagPicker = false"
+        ></TagPicker>
       </div>
     </div>
   </div>
@@ -39,7 +43,6 @@ import { Vue, Options } from 'vue-class-component'
 
 import { Note } from '../models';
 import TagPicker from './TagPicker.vue'
-import { util } from '../util'
 
 @Options({
   components: {
@@ -51,6 +54,7 @@ import { util } from '../util'
 })
 export default class NoteEditor extends Vue {
   note!: Note
+  isOpenTagPicker = false
 
   get joinedTags(): string {
     return this.note.tags.map(tag => tag.name).join(' ')
@@ -59,14 +63,7 @@ export default class NoteEditor extends Vue {
   openTagPicker(e: MouseEvent) {
     e.preventDefault();
     (e.target as HTMLElement).blur()
-
-    // ダイアログを開く
-    const tagPicker = document.querySelector('#tagPickerEditer .modal')
-    if (!tagPicker) {
-      return
-    }
-    let modal = new bootstrap.Modal(tagPicker)
-    modal.show()
+    this.isOpenTagPicker = true
   }
 
   cancelEdit() {

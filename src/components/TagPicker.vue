@@ -1,7 +1,7 @@
 <!-- タグ選択ダイアログ -->
 <template>
-  <div>
-    <div class="modal" tabindex="-1" v-if="tags">
+  <div v-show="visible">
+    <div class="modal" style="display: block" tabindex="-1">
       <div
         class="
           modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg
@@ -38,12 +38,10 @@
                     v-model="tagFilterKeyword"
                   />
                   <label>Add Tag</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    v-model="tagFilterKeyword"
-                  />
-                  <button class="form-control btn-primary">Add</button>
+                  <input type="text" class="form-control" v-model="newTag" />
+                  <button class="form-control btn-primary" @click="createTag">
+                    Add
+                  </button>
                 </div>
               </div>
 
@@ -66,11 +64,13 @@
           </div>
 
           <div class="modal-footer">
-            <button class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+            <button class="btn btn-primary" @click="close">OK</button>
           </div>
         </div>
       </div>
     </div>
+
+    <div class="modal-backdrop show"></div>
   </div>
 </template>
 
@@ -79,24 +79,46 @@ import { Options, Vue } from 'vue-class-component'
 import bootstrap from 'bootstrap'
 import { dao } from '../dao'
 import { Tag } from '../models'
-import { dummyTags } from '../consts'
+import { consts } from '../consts'
 
 @Options({
   props: {
     tags: {
       type: Array,
       default: []
+    },
+    visible: {
+      type: Boolean,
+      default: false
+    }
+  },
+  watch: {
+    visible() {
+      this.changeVisibility()
     }
   }
 })
 export default class TagPicker extends Vue {
   tags!: Tag[] // 選択中のタグ一覧
+  visible!: boolean
 
   availableTags: Tag[] = []
   tagFilterKeyword = ''
+  newTag = ''
 
   get tagFiltered(): Tag[] {
     return this.availableTags.filter(tag => tag.name.toLowerCase().includes(this.tagFilterKeyword.toLowerCase()))
+  }
+
+  close() {
+    this.$emit('close')
+  }
+
+  changeVisibility() {
+    // 表示時にタグ一覧を取得
+    if (this.visible) {
+      dao.getTags().then(tags => this.availableTags = tags)
+    }
   }
 
   // タグを追加する
@@ -112,14 +134,24 @@ export default class TagPicker extends Vue {
     this.tags.splice(idx, 1)
   }
 
-  mounted(): void {
-    dao.getTags()
-      .then(tags => { this.availableTags = tags })
-      .catch(err => {
-        if (process.env.NODE_ENV == 'development') {
-          this.availableTags = dummyTags.slice()
-        }
-      })
+  createTag() {
+    const tagname = this.newTag
+    const tag = new Tag(null, tagname)
+    // タグをDBに登録後、タグ一覧をリクエストして、id を取得する
+    // その後、新しく登録したタグを選択状態にする
+    dao.createTag(tag)
+      .then(res => dao.getTags()
+        .then(tags => {
+          const tag = tags.find(tag => tag.name == tagname)
+          if (tag) {
+            this.addTag(tag)
+            this.availableTags = tags
+          } else {
+            console.error('タグ登録失敗')
+          }
+        })
+        .catch(err => console.error(err.result)))
+      .catch(err => console.error(err.result))
   }
 }
 </script>

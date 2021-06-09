@@ -8,7 +8,7 @@
         <button class="form-control" @click="showEditorCreate">Add</button>
 
         <label class="form-label">Keyword</label>
-        <input class="form-control" type="text" />
+        <input class="form-control" type="text" :value="keyword" />
         <button class="form-control">Search</button>
 
         <label class="form-label">Tags</label>
@@ -16,6 +16,7 @@
           id="formTags"
           class="form-control"
           type="text"
+          readonly
           :value="query_tags_str"
           @click="openTagPicker"
         />
@@ -38,7 +39,7 @@
         </div>
 
         <!-- ノート一覧画面 -->
-        <div v-if="currentTab == 'notelist'">
+        <div v-if="currentTab == tabname.notelist">
           <div class="row justify-content-center">
             <NoteCard
               class="col-5 col-xl-4 col-xxl-2 m-2"
@@ -52,10 +53,10 @@
         </div>
 
         <!-- ノート作成画面 -->
-        <div v-if="currentTab == 'editor'">
+        <div v-if="currentTab == tabname.editor">
           <NoteEditor
             :note="editNote"
-            @cancel="currentTab = 'notelist'"
+            @cancel="currentTab = tabname.notelist"
             @create="commitCreate"
             @update="commitUpdate"
           ></NoteEditor>
@@ -65,7 +66,11 @@
 
     <!-- 検索用タグ選択画面 -->
     <div id="tagPickerQuery">
-      <TagPicker v-model:tags="query_tags"></TagPicker>
+      <TagPicker
+        :tags="query_tags"
+        :visible="isOpenTagPicker"
+        @close="isOpenTagPicker = false"
+      ></TagPicker>
     </div>
 
     <!-- 削除確認ダイアログ -->
@@ -102,7 +107,7 @@ import TagPicker from "./components/TagPicker.vue"
 import NoteEditor from "./components/NoteEditor.vue"
 import { Note, Tag } from "./models"
 import { dao } from "./dao"
-import { dummyNotes } from "./consts"
+import { consts } from "./consts"
 
 @Options({
   components: {
@@ -112,21 +117,29 @@ import { dummyNotes } from "./consts"
   },
 })
 export default class App extends Vue {
+  readonly tabname = {
+    notelist: 'notelist',
+    editor: 'editor'
+  }
+
   notes: Note[] = []  // 表示するノート
-  editNote: Note | null = null
+  editNote: Note = Note.empty()
+
   query_tags: Tag[] = []
-  currentTab = 'notelist'  // メインカラムに表示するもの
-  // 以下が空文字以外のときアラート表示
+  keyword = ''
+
+  currentTab = this.tabname.notelist  // メインカラムに表示するもの
   successMsg = ''
   errorMsg = ''
+  isOpenTagPicker = false
 
   flashError(msg: string, time = 3) {
     this.errorMsg = msg
-    setTimeout((() => this.errorMsg = ''), 3000)
+    setTimeout((() => this.errorMsg = ''), time * 1000)
   }
   flashSuccess(msg: string, time = 3) {
     this.successMsg = msg
-    setTimeout((() => this.successMsg = ''), 3000)
+    setTimeout((() => this.successMsg = ''), time * 1000)
   }
 
   // タグをスペースで結合した形式に変換
@@ -138,65 +151,86 @@ export default class App extends Vue {
   openTagPicker(e: MouseEvent) {
     e.preventDefault();
     (e.target as HTMLElement).blur()
-
-    // ダイアログを開く
-    const tagPicker = document.querySelector('#tagPickerQuery .modal')
-    if (tagPicker) {
-      let modal = new bootstrap.Modal(tagPicker)
-      modal.show()
-    }
+    this.isOpenTagPicker = true
   }
 
   showNoteList(e: MouseEvent) {
-    this.currentTab = 'notelist'
+    this.currentTab = this.tabname.notelist
   }
 
   showEditorCreate(e: MouseEvent) {
     this.editNote = Note.empty()
-    this.currentTab = 'editor'
+    this.currentTab = this.tabname.editor
   }
 
   showEditPage(note: Note) {
-    this.editNote = note
-    this.currentTab = 'editor'
+    this.editNote = note.clone()
+    this.currentTab = this.tabname.editor
   }
 
   comfirmDeleteNote(note: Note) {
     // 削除確認ダイアログを開く
     const dialog = document.querySelector('#deleteDialog')
     if (dialog) {
+      this.editNote = note.clone()
       let modal = new bootstrap.Modal(dialog)
       modal.show()
     }
   }
 
-  commitDelete() {
-    this.flashSuccess('削除しました')
-  }
-  commitCreate() {
-    if (this.editNote && !this.editNote.id) {
-      dao.createNotes(this.editNote)
-        .then(res => {
-          this.flashSuccess('追加しました')
-        }).catch(err => {
-          this.flashSuccess('失敗しました\n' + err.result)
-          console.log(err)
-        })
-    }
-  }
-  commitUpdate() {
-    this.flashSuccess('追加しました')
-  }
-
-  mounted(): void {
+  fetchNotes() {
     dao.getNotes()
       .then(notes => this.notes = notes)
       .catch(err => {
+        this.flashError(err.result)
+        console.log(err)
         // 開発環境の場合は、ダミーデータを表示
-        if (process.env.NODE_ENV == 'development') {
-          this.notes = dummyNotes.slice()
-        }
+        // if (process.env.NODE_ENV == 'development') {
+        //   this.notes = consts.dummyNotes.slice()
+        // }
       })
+  }
+
+  commitDelete() {
+    if (this.editNote.id) {
+      dao.deleteNote(this.editNote).then(res => {
+        this.fetchNotes()
+        this.flashSuccess('削除しました')
+      }).catch(err => {
+        this.flashSuccess('失敗しました\n' + err.result)
+      })
+    }
+  }
+
+  commitCreate() {
+    if (!this.editNote.id) {  // id が null の時は新規作成
+      dao.createNote(this.editNote)
+        .then(res => {
+          this.fetchNotes()
+          this.currentTab = this.tabname.notelist
+          this.flashSuccess('追加しました')
+        }).catch(err => {
+          this.flashSuccess('失敗しました\n' + err.result)
+        })
+    }
+  }
+
+  commitUpdate() {
+    if (this.editNote.id) {
+      dao.updateNote(this.editNote)
+        .then(res => {
+          this.fetchNotes()
+          this.currentTab = this.tabname.notelist
+          this.flashSuccess('更新しました')
+        }).catch(err => {
+          this.flashSuccess('失敗しました\n' + err.result)
+        })
+    }
+    this.flashSuccess('追加しました')
+  }
+
+  mounted() {
+    this.fetchNotes()
   }
 }
 
