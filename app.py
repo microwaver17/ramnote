@@ -1,6 +1,6 @@
 from flask import Flask, request, abort, jsonify, Response
 from werkzeug.exceptions import HTTPException
-from typing import Union
+from typing import Union, Optional
 import sqlite3
 from contextlib import closing
 
@@ -11,26 +11,39 @@ app = Flask(__name__)
 
 
 def slim(s: str) -> str:
-    """文字列を設定した文字数で打ち切る
-
-    Args:
-        s: 文字列
-
-    Returns:
-        str: 打ち切った文字列
-
-    """
+    """文字列を設定した文字数で打ち切る"""
     return s[:config.text_max_length]
 
 
-def success() -> dict:
-    """正常終了時のレスポンスを生成
+def extract_tags(tags_str: str) -> list[str]:
+    """コンマ区切り文字列をタグIDのリストに分割"""
+    if tags_str == '':
+        return []
 
-    Returns:
-        dict: レスポンス
+    tags = tags_str.split(',')
+    tags = sorted(tags)
+    return tags
 
-    """
-    return {'result': consts.SUCCESS}
+
+def concat_tag_ids(tag_ids: list[int]) -> str:
+    """タグIDのリストをコンマ区切り文字列に結合"""
+    tag_ids = sorted(tag_ids)
+    return ','.join([str(tag_id) for tag_id in tag_ids])
+
+
+def response(result: str) -> dict:
+    """HTTPレスポンスを生成"""
+    return {'result': result}
+
+
+def is_tag_exist(tag_id: int, cur: sqlite3.Cursor) -> bool:
+    """タグが tags テーブルに存在するか確認"""
+    ret = cur.execute("""
+        SELECT count(*) FROM tags WHERE id=?
+    """, (tag_id,))
+    if ret.fetchone()[0] == 1:
+        return True
+    return False
 
 
 @app.errorhandler(HTTPException)
@@ -45,7 +58,7 @@ def server_error(e: HTTPException) -> tuple[dict, int]:
 
     """
     cause = e.description if e.description is not None else consts.ErrorCauses.UNKNOWN
-    return {'cause': cause}, e.code
+    return response(cause), e.code
 
 
 @app.route('/api/notes', methods=['GET', 'POST'])
@@ -54,11 +67,16 @@ def notes_list_or_register() -> Union[dict, Response]:
 
     URL
         /api/notes
+    GET
+        * keyword (str)
+        * tag-ids (str) idのコンマ区切り
+        * date-from (int)
+        * date-to (int)
     POST
         * title (str)
         * body (str)
         * date (int)
-        * tags (str)
+        * tag_ids (int)
 
     Returns:
         Union[dict, Response]: レスポンス
@@ -66,15 +84,49 @@ def notes_list_or_register() -> Union[dict, Response]:
     """
     try:
         with closing(sqlite3.connect(config.db_path)) as connection:
+            connection.row_factory = sqlite3.Row
             cur = connection.cursor()
 
             # 取得
             if request.method == 'GET':
-                notes = cur.execute("""
-                    SELECT * FROM notes
-                """)
-                res = [dict(zip(('id', 'title', 'body', 'date', 'tags'), note)) for note in notes]
+                keyword = request.args.get('keyword', '')
+                tag_ids_str = request.args.get('tag-ids', '')
+                date_from = request.args.get('date-from', 0)
+                date_to = request.args.get('date-to', 2**64 // 2 - 1)
 
+                tag_ids = extract_tags(tag_ids_str)
+                tag_ids_like = '%' + '%'.join([str(tag_id) for tag_id in tag_ids]) + '%'
+
+                print(request.full_path)
+
+                notes = cur.execute("""
+                    SELECT * FROM notes 
+                        WHERE deleted=? 
+                        AND (title LIKE ? OR body LIKE ?) 
+                        AND tag_ids LIKE ? 
+                        AND date > ?
+                        AND date < ?
+                        ORDER BY date
+                """, (0, f'%{keyword}%', f'%{keyword}%', tag_ids_like, date_from, date_to)).fetchall()
+
+                res = []
+                for note in notes:
+                    # コンマ区切りのIDで記録されている tag の name を取得
+                    tags = []
+                    tag_ids = extract_tags(note['tag_ids'])
+                    for tag_id in tag_ids:
+                        tag_name = cur.execute("""
+                            SELECT * FROM tags WHERE id=?
+                        """, (tag_id, )).fetchone()['name']
+                        tags.append({'id': tag_id, 'name': tag_name})
+
+                    res.append({
+                        'id': note['id'],
+                        'title': note['title'],
+                        'body': note['body'],
+                        'date': note['date'],
+                        'tags': tags
+                    })
                 return jsonify(res)
 
             # 登録
@@ -83,26 +135,23 @@ def notes_list_or_register() -> Union[dict, Response]:
                     abort(400, description=consts.ErrorCauses.IS_NOT_JSON)
                 json: dict = request.json
 
-                # タグが tags テーブルに存在するか確認
-                tags = json['tags'].split(',')
-                for tag in tags:
-                    ret = cur.execute("""
-                        SELECT count(*) FROM tags WHERE tag=?
-                    """, (tag, ))
-                    if ret.fetchone()[0] == 0:
-                        # タグがなければ登録しない
+                # タグが存在するか確認
+                for tag in json['tags']:
+                    if not is_tag_exist(tag['id'], cur):
                         abort(400, description=consts.ErrorCauses.TAG_NOT_FOUND)
+
+                tag_ids = concat_tag_ids([tag['id'] for tag in json['tags']])
 
                 # 追加
                 cur.execute("""
-                    INSERT INTO notes(title, body, date, tags) VALUES(?, ?, ?, ?)
-                """, (slim(json['title']), slim(json['body']), json['date'], slim(json['tags'])))
+                    INSERT INTO notes(title, body, date, tag_ids) VALUES(?, ?, ?, ?)
+                """, (slim(json['title']), slim(json['body']), json['date'], slim(tag_ids)))
 
                 connection.commit()
-                return success()
+                return response(consts.SUCCESS)
 
-    except sqlite3.Error:
-        abort(500, description=consts.ErrorCauses.DB)
+    except sqlite3.Error as e:
+        abort(500, description=(consts.ErrorCauses.DB + ' ' + str(e)))
 
 
 @app.route('/api/notes/<pk>', methods=['POST'])
@@ -132,30 +181,28 @@ def notes_update(pk) -> dict:
 
     try:
         with closing(sqlite3.connect(config.db_path)) as connection:
+            connection.row_factory = sqlite3.Row
             cur = connection.cursor()
 
-            # タグが tags テーブルに存在するか確認
-            tags = json['tags'].split(',')
-            for tag in tags:
-                ret = cur.execute("""
-                    SELECT count(*) FROM tags WHERE tag=?
-                """, (tag,))
-                if ret.fetchone()[0] == 0:
-                    # タグがなければ登録しない
+            # タグが存在するか確認
+            for tag in json['tags']:
+                if not is_tag_exist(tag['id'], cur):
                     abort(400, description=consts.ErrorCauses.TAG_NOT_FOUND)
+
+            tag_ids = concat_tag_ids([tag['id'] for tag in json['tags']])
 
             cur.execute("""
                 UPDATE notes SET 
-                title=?, body=?, date=?, tags=?
+                title=?, body=?, date=?, tag_ids=?
                 WHERE id=?
-            """, (json['title'], json['body'], json['date'], json['tags'], pk))
+            """, (slim(json['title']), slim(json['body']), json['date'], slim(tag_ids), pk))
             if cur.rowcount == 0:
                 abort(400, description=consts.ErrorCauses.NOTE_NOT_FOUND)
             connection.commit()
     except sqlite3.Error:
         abort(500, description=consts.ErrorCauses.DB)
 
-    return success()
+    return response(consts.SUCCESS)
 
 
 @app.route('/api/notes/<pk>/delete', methods=['POST'])
@@ -177,17 +224,18 @@ def notes_delete(pk) -> dict:
     pk = int(pk)
     try:
         with closing(sqlite3.connect(config.db_path)) as connection:
+            connection.row_factory = sqlite3.Row
             cur = connection.cursor()
             cur.execute("""
-                DELETE FROM notes where id=?
-            """, (pk, ))
+                UPDATE notes SET deleted=? WHERE id=?
+            """, (1, pk))
             if cur.rowcount == 0:
                 abort(400, description=consts.ErrorCauses.NOTE_NOT_FOUND)
             connection.commit()
     except sqlite3.Error:
         abort(500, description=consts.ErrorCauses.DB)
 
-    return success()
+    return response(consts.SUCCESS)
 
 
 @app.route('/api/tags', methods=['GET', 'POST'])
@@ -205,12 +253,13 @@ def tags_list_or_register() -> Union[dict, Response]:
     """
     try:
         with closing(sqlite3.connect(config.db_path)) as connection:
+            connection.row_factory = sqlite3.Row
             cur = connection.cursor()
 
             # 取得
             if request.method == 'GET':
                 tags = cur.execute("""
-                    SELECT * FROM tags
+                    SELECT * FROM tags WHERE deleted=0
                 """)
                 res = [dict(zip(('id', 'name'), tag)) for tag in tags]
 
@@ -235,7 +284,7 @@ def tags_list_or_register() -> Union[dict, Response]:
                 """, (slim(json['name']), ))
 
                 connection.commit()
-                return success()
+                return response(consts.SUCCESS)
 
     except sqlite3.Error:
         abort(500, description=consts.ErrorCauses.DB)
@@ -260,14 +309,15 @@ def tags_delete(pk: str) -> dict:
     pk = int(pk)
     try:
         with closing(sqlite3.connect(config.db_path)) as connection:
+            connection.row_factory = sqlite3.Row
             cur = connection.cursor()
             cur.execute("""
-                DELETE FROM tags where id=?
-            """, (pk, ))
+                UPDATE tags SET deleted=? WHRER id=?
+            """, (1, pk))
             if cur.rowcount == 0:
                 abort(400, description=consts.ErrorCauses.TAG_NOT_FOUND)
             connection.commit()
     except sqlite3.Error:
         abort(500, description=consts.ErrorCauses.DB)
 
-    return success()
+    return response(consts.SUCCESS)

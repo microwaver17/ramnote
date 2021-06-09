@@ -25,7 +25,7 @@ if __name__ == '__main__':
                 title TEXT NOT NULL,
                 body TEXT NOT NULL,
                 date INTEGER NOT NULL,
-                tags TEXT NOT NULL,
+                tag_ids TEXT NOT NULL,
                 deleted INTEGER NOT NULL DEFAULT 0
             )
         """)
@@ -35,7 +35,8 @@ if __name__ == '__main__':
         cur.execute("""
             CREATE TABLE tags(
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL UNIQUE
+                name TEXT NOT NULL UNIQUE,
+                deleted INTEGER NOT NULL DEFAULT 0
             )
         """)
 

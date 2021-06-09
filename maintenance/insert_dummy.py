@@ -12,11 +12,11 @@ def rnd_utc():
 
 
 testdata_notes = [
-    ['ビートルズ', 'ヒア・カムズ・ザ・サン', rnd_utc(), '音楽'],
-    ['使用楽器', 'ストラトキャスタ―', rnd_utc(), '音楽,作曲'],
-    ['買い物', '卵,ネギ,もやし', rnd_utc(), 'TODO'],
-    ['物語案', '老人に生まれて若くなっていった先のきらら系', rnd_utc(), 'アイデア,漫画'],
-    ['', '上野さんは2巻まで持ってる', rnd_utc(), '漫画,TODO'],
+    ['ジャンル', 'ロック', rnd_utc(), '1'],
+    ['使用楽器', 'ギター', rnd_utc(), '1,2'],
+    ['買い物', '卵,ネギ,もやし', rnd_utc(), '3'],
+    ['', 'SF', rnd_utc(), '4,5'],
+    ['企画書', '', rnd_utc(), '3,4'],
 ]
 testdata_tags = [
     '音楽',
@@ -51,7 +51,7 @@ if __name__ == '__main__':
 
     for note in testdata_notes:
         cur.execute("""
-            INSERT INTO notes(title, body, date, tags) VALUES(?, ?, ?, ?)
+            INSERT INTO notes(title, body, date, tag_ids) VALUES(?, ?, ?, ?)
         """, note)
 
     for tag in testdata_tags:
