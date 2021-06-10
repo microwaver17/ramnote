@@ -39,7 +39,7 @@ export const dao = Object.freeze({
             if (tags.length > 0) { params['tag-ids'] = tags.map(tag => tag.id).join(',') }
             if (date_from >= 0) { params['date-from'] = date_from }
             if (date_to >= 0) { params['date-to'] = date_to }
-            axios.get(api + 'notes', params)
+            axios.get(api + 'notes', { params: params })
                 .then(res => {
                     const notes = (res.data as Array<any>).map(note => {
                         const tags = (note.tags as Array<any>).map(tag => new Tag(tag.id, tag.name))

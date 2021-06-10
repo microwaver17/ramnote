@@ -3,36 +3,37 @@
   <div>
     <div class="card">
       <div class="card-body">
-        <div class="clearfix">
-          <div class="float-start">
-            <h5 class="card-title">{{ note.title }}</h5>
-            <h6 class="card-subtitle">{{ date }}</h6>
-          </div>
-          <div class="dropdown">
-            <a
+        <div class="d-flex mb-1">
+          <strong class="">{{ note.title }}</strong>
+          <div class="dropdown ms-auto">
+            <span
               id="menu"
-              class="btn float-end"
+              style="cursor: pointer; vertical-align: middle"
               data-bs-toggle="dropdown"
               aria-expanded="false"
-              ><img class="float-end" src="@/assets/three-dots.svg"
-            /></a>
+            >
+              <img src="@/assets/three-dots.svg" />
+            </span>
             <!-- ドロップダウンメニュー -->
             <ul class="dropdown-menu" aria-labelledby="menu">
               <li>
-                <a class="dropdown-item" @click="emitEdit">Edit</a>
+                <button class="dropdown-item" @click="emitEdit">Edit</button>
               </li>
               <li>
-                <a class="dropdown-item" @click="emitDelete">Delete</a>
+                <button class="dropdown-item" @click="emitDelete">
+                  Delete
+                </button>
               </li>
             </ul>
           </div>
         </div>
-        <div>{{ note.body }}</div>
+        <div class="mb-1" style="white-space: pre-wrap">{{ note.body }}</div>
         <div>
+          <span class="h6">{{ date }}</span>
           <span
             v-for="tag in note.tags"
             :key="tag.id"
-            class="border rounded text-white bg-secondary p-1 float-start"
+            class="badge bg-secondary ms-2 fw-normal"
             >{{ tag.name }}</span
           >
         </div>
@@ -80,4 +81,7 @@ export default class NoteCard extends Vue {
 </script>
 
 <style scoped>
+.card {
+  width: 300px;
+}
 </style>

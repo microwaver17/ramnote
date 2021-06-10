@@ -1,35 +1,71 @@
 <template>
   <div>
     <!-- サイドバー・検索 -->
-    <div class="row">
-      <div id="sidebar" class="col-3 col-xl-3 col-xxl-2">
-        <h2>RAMNOTE</h2>
+    <div>
+      <div class="sidebar">
+        <div class="mt-1 mb-3">
+          <!-- ロゴ RAMNOTE -->
+          <img
+            src="@/assets/ramnote.svg"
+            class="img-fluid pointer-cursor"
+            style="cursor: pointer"
+            @click="showInitialPage"
+          />
+        </div>
 
-        <button class="form-control" @click="showEditorCreate">Add</button>
+        <div class="mb-3 pb-3 border-bottom">
+          <div class="mb-3">
+            <label class="form-label">キーワード</label>
+            <input
+              type="search"
+              class="form-control"
+              v-model="keyword"
+              @keydown="keydownAtKeywordInput"
+            />
+          </div>
 
-        <label class="form-label">Keyword</label>
-        <input class="form-control" type="text" :value="keyword" />
-        <button class="form-control">Search</button>
+          <div class="mb-3">
+            <label class="form-label">タグ</label>
+            <input
+              id="formTags"
+              class="form-control"
+              type="text"
+              placeholder="クリックで追加"
+              readonly
+              :value="query_tags_str"
+              @click="openTagPicker"
+            />
+          </div>
 
-        <label class="form-label">Tags</label>
-        <input
-          id="formTags"
-          class="form-control"
-          type="text"
-          readonly
-          :value="query_tags_str"
-          @click="openTagPicker"
-        />
+          <button class="btn btn-light form-control" @click="fetchNotes">
+            検索
+          </button>
+        </div>
 
+        <div class="mb-3">
+          <button class="btn btn-light form-control" @click="showEditorCreate">
+            メモを追加
+          </button>
+        </div>
+
+        <div class="mb-3">
+          <a :href="csvUrl" class="btn btn-light form-control">
+            CSVエクスポート
+          </a>
+        </div>
+
+        <!--
+          実装予定の日時検索
         <label class="form-label">From</label>
         <input class="form-control" type="date" />
 
         <label class="form-label">To</label>
         <input class="form-control" type="date" />
+        -->
       </div>
 
       <!-- メインカラム -->
-      <div id="contents" class="col-9 col-xl-9 col-xxl-10 ms-auto">
+      <div class="contents">
         <!-- アラート -->
         <div class="alert alert-success" v-show="successMsg">
           {{ successMsg }}
@@ -39,17 +75,15 @@
         </div>
 
         <!-- ノート一覧画面 -->
-        <div v-if="currentTab == tabname.notelist">
-          <div class="row justify-content-center">
-            <NoteCard
-              class="col-5 col-xl-4 col-xxl-2 m-2"
-              v-for="note in notes"
-              :key="note.id"
-              :note="note"
-              @edit="showEditPage"
-              @delete="comfirmDeleteNote"
-            ></NoteCard>
-          </div>
+        <div class="d-flex flex-wrap" v-if="currentTab == tabname.notelist">
+          <NoteCard
+            class="m-1"
+            v-for="note in notes"
+            :key="note.id"
+            :note="note"
+            @edit="showEditPage"
+            @delete="comfirmDeleteNote"
+          ></NoteCard>
         </div>
 
         <!-- ノート作成画面 -->
@@ -75,7 +109,7 @@
 
     <!-- 削除確認ダイアログ -->
     <div id="deleteDialog" class="modal" tabindex="-1">
-      <div class="modal-dialog">
+      <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-body">
             <p>削除してもよろしいですか？</p>
@@ -108,6 +142,7 @@ import NoteEditor from "./components/NoteEditor.vue"
 import { Note, Tag } from "./models"
 import { dao } from "./dao"
 import { consts } from "./consts"
+import { config } from './config'
 
 @Options({
   components: {
@@ -133,6 +168,15 @@ export default class App extends Vue {
   errorMsg = ''
   isOpenTagPicker = false
 
+  // タグをスペースで結合した形式に変換
+  get query_tags_str() {
+    return this.query_tags.map(tag => tag.name).join(' ')
+  }
+
+  get csvUrl() {
+    return config.apiRoot + 'export/csv'
+  }
+
   flashError(msg: string, time = 3) {
     this.errorMsg = msg
     setTimeout((() => this.errorMsg = ''), time * 1000)
@@ -142,9 +186,17 @@ export default class App extends Vue {
     setTimeout((() => this.successMsg = ''), time * 1000)
   }
 
-  // タグをスペースで結合した形式に変換
-  get query_tags_str() {
-    return this.query_tags.map(tag => tag.name).join(' ')
+  keydownAtKeywordInput(e: KeyboardEvent) {
+    if (e.key == 'Enter') {
+      this.fetchNotes()
+    }
+  }
+
+  showInitialPage() {
+    this.keyword = ''
+    this.query_tags = []
+    this.fetchNotes()
+    this.currentTab = this.tabname.notelist
   }
 
   // タグ選択フォームがクリックされた時
@@ -179,7 +231,7 @@ export default class App extends Vue {
   }
 
   fetchNotes() {
-    dao.getNotes()
+    dao.getNotes(this.keyword, this.query_tags)
       .then(notes => this.notes = notes)
       .catch(err => {
         this.flashError(err.result)
@@ -204,10 +256,10 @@ export default class App extends Vue {
 
   commitCreate() {
     if (!this.editNote.id) {  // id が null の時は新規作成
+      this.editNote.date = new Date() // 改めて現在日時を格納
       dao.createNote(this.editNote)
         .then(res => {
           this.fetchNotes()
-          this.currentTab = this.tabname.notelist
           this.flashSuccess('追加しました')
         }).catch(err => {
           this.flashSuccess('失敗しました\n' + err.result)
@@ -220,7 +272,6 @@ export default class App extends Vue {
       dao.updateNote(this.editNote)
         .then(res => {
           this.fetchNotes()
-          this.currentTab = this.tabname.notelist
           this.flashSuccess('更新しました')
         }).catch(err => {
           this.flashSuccess('失敗しました\n' + err.result)
@@ -236,16 +287,39 @@ export default class App extends Vue {
 
 </script>
 
-<style>
-#sidebar {
+<style scoped>
+.sidebar {
+  z-index: 100;
   position: fixed;
   top: 0;
   left: 0;
   bottom: 0;
+  width: 200px;
+  padding: 10px;
 
-  background-color: #ff9999;
+  color: #ffffff;
+  background-color: #313131;
 }
-#contents {
-  background-color: #9999ff;
+.contents {
+  z-index: 100;
+  position: fixed;
+  top: 0;
+  left: 200px;
+  right: 0;
+  bottom: 0;
+  padding: 10px;
+
+  background-color: #fafafa;
+}
+.alert {
+  z-index: 10000;
+  position: fixed;
+  bottom: 0;
+  left: 200px;
+  right: 0;
+  margin: 10px;
+}
+input[type="search"] {
+  -webkit-appearance: searchfield-cancel-button;
 }
 </style>

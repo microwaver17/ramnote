@@ -1,28 +1,40 @@
 <template>
   <div>
-    <div v-if="note">
-      <label>Title</label>
-      <input type="text" class="form-control" v-model="note.title" />
-      <label>Body</label>
-      <textarea
-        class="form-control"
-        style="height: 30vh"
-        v-model="note.body"
-      ></textarea>
-      <label>Tags</label>
-      <input
-        type="text"
-        class="form-control"
-        :value="joinedTags"
-        @click="openTagPicker"
-      />
-
-      <button class="btn btn-secondary" @click="cancelEdit">Cancel</button>
-      <div v-if="note.id == null">
-        <button class="btn btn-primary" @click="emitCreate">Create</button>
+    <div class="editor mt-1">
+      <h3 class="mb-3">メモを追加</h3>
+      <div class="mb-3">
+        <label class="form-label">タイトル</label>
+        <input type="text" class="form-control" v-model="note.title" />
       </div>
-      <div v-else>
-        <button class="btn btn-primary" @click="emitUpdate">Update</button>
+      <div class="mb-3">
+        <label class="form-label">本文</label>
+        <textarea
+          class="form-control"
+          style="height: 30vh"
+          v-model="note.body"
+        ></textarea>
+      </div>
+      <div class="mb-4">
+        <label class="form-label">タグ</label>
+        <input
+          type="text"
+          class="form-control"
+          placeholder="クリックで追加"
+          readonly
+          :value="joinedTags"
+          @click="openTagPicker"
+        />
+      </div>
+      <div class="row">
+        <div class="col-auto">
+          <button class="btn btn-secondary" @click="cancelEdit">戻る</button>
+        </div>
+        <div class="col-auto" v-if="note.id == null">
+          <button class="btn btn-primary" @click="emitCreate">追加</button>
+        </div>
+        <div class="col-auto" v-else>
+          <button class="btn btn-primary" @click="emitUpdate">更新</button>
+        </div>
       </div>
 
       <!-- タグ選択画面 -->
@@ -82,4 +94,8 @@ export default class NoteEditor extends Vue {
 </script>
 
 <style scoped>
+.editor {
+  margin: 0 auto;
+  max-width: 500px;
+}
 </style>
