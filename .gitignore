@@ -240,3 +240,4 @@ modules.xml
 # End of https://www.toptal.com/developers/gitignore/api/flask,pycharm+iml
 
 *.db
+/static

@@ -1,8 +1,11 @@
-from flask import Flask, request, abort, jsonify, Response
+import datetime
+
+from flask import Flask, request, abort, jsonify, Response, make_response
 from werkzeug.exceptions import HTTPException
 from typing import Union, Optional
 import sqlite3
 from contextlib import closing
+from datetime import datetime
 
 import config
 import consts
@@ -98,6 +101,7 @@ def notes_list_or_register() -> Union[dict, Response]:
                 tag_ids_like = '%' + '%'.join([str(tag_id) for tag_id in tag_ids]) + '%'
 
                 print(request.full_path)
+                print(tag_ids_like)
 
                 notes = cur.execute("""
                     SELECT * FROM notes 
@@ -106,7 +110,7 @@ def notes_list_or_register() -> Union[dict, Response]:
                         AND tag_ids LIKE ? 
                         AND date > ?
                         AND date < ?
-                        ORDER BY date
+                        ORDER BY date DESC
                 """, (0, f'%{keyword}%', f'%{keyword}%', tag_ids_like, date_from, date_to)).fetchall()
 
                 res = []
@@ -300,7 +304,7 @@ def tags_delete(pk: str) -> dict:
         なんでもいい
 
     Args:
-        pk:
+        pk: 削除するタグのID
 
     Returns:
         dict: レスポンス
@@ -312,7 +316,7 @@ def tags_delete(pk: str) -> dict:
             connection.row_factory = sqlite3.Row
             cur = connection.cursor()
             cur.execute("""
-                UPDATE tags SET deleted=? WHRER id=?
+                UPDATE tags SET deleted=? WHERE id=?
             """, (1, pk))
             if cur.rowcount == 0:
                 abort(400, description=consts.ErrorCauses.TAG_NOT_FOUND)
@@ -321,3 +325,61 @@ def tags_delete(pk: str) -> dict:
         abort(500, description=consts.ErrorCauses.DB)
 
     return response(consts.SUCCESS)
+
+
+def csv_escape(text: str) -> str:
+    """CSVのセルをエスケープ"""
+    return '"' + str(text).replace('"', '""') + '"'
+
+
+@app.route('/api/export/csv')
+def export_csv():
+    """CSV形式（Shift-JIS）でエクスポート
+
+    URL
+        /api/export/csv
+
+    Returns:
+        Response: レスポンス
+
+    """
+    try:
+        with closing(sqlite3.connect(config.db_path)) as connection:
+            connection.row_factory = sqlite3.Row
+            cur = connection.cursor()
+            notes = cur.execute("""
+                SELECT * FROM notes WHERE deleted=?
+            """, (0, )).fetchall()
+
+            lines: list[str] = []
+            lines.append(','.join([csv_escape(head) for head in ['タイトル', '本文', 'タグ', '日付']]))
+            for note in notes:
+                line = []
+                line.append(note['title'])
+                line.append(note['body'])
+
+                tag_ids = extract_tags(note['tag_ids'])
+                tags = []
+                for tag_id in tag_ids:
+                    tag = cur.execute("""
+                        SELECT * FROM tags WHERE id=?
+                    """, (tag_id, )).fetchone()
+                    tags.append(tag['name'])
+                line.append(','.join(tags))
+
+                line.append(datetime.fromtimestamp(note['date'] / 1000).strftime('%Y/%m/%d'))
+                line_str = ','.join([csv_escape(str(val)) for val in line])
+                lines.append(line_str)
+
+            now_str = datetime.today().strftime('%Y%m%d_%H%M%S')
+
+            res = make_response()
+            res.data = '\r\n'.join(lines).encode('sjis')
+            #res.headers['Content-Type'] = 'text/plain; charset=Shift-JIS'
+            res.headers['Content-Type'] = 'text/csv; charset=Shift-JIS'
+            res.headers['Content-Disposition'] = f'attachment; filename=ramnote_{now_str}.csv'
+
+            return res
+
+    except sqlite3.Error:
+        abort(500, description=consts.ErrorCauses.DB)
