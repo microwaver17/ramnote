@@ -25,7 +25,6 @@ if __name__ == '__main__':
                 title TEXT NOT NULL,
                 body TEXT NOT NULL,
                 date INTEGER NOT NULL,
-                tag_ids TEXT NOT NULL,
                 deleted INTEGER NOT NULL DEFAULT 0
             )
         """)
@@ -37,6 +36,16 @@ if __name__ == '__main__':
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL UNIQUE,
                 deleted INTEGER NOT NULL DEFAULT 0
+            )
+        """)
+
+    if 'junction_notes_tags' not in tables:
+        print('テーブル作成: note_tags')
+        cur.execute("""
+            CREATE TABLE junction_notes_tags(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                note_id INTEGER NOT NULL,
+                tag_id INTEGER NOT NULL
             )
         """)
 

@@ -1,4 +1,4 @@
-class ErrorCauses:
+class ResultMessage:
     """エラー原因を表す文字列定義"""
 
     UNKNOWN = 'unknown'
@@ -19,6 +19,5 @@ class ErrorCauses:
     IS_NOT_JSON = 'is_not_json'
     """POSTの形式がJSONでなかった"""
 
-
-SUCCESS = 'ok'
-"""成功"""
+    SUCCESS = 'ok'
+    """成功"""
