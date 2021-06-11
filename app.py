@@ -216,7 +216,7 @@ def notes_update(pk) -> dict:
             for tag in json['tags']:
                 rows = cur.execute("""
                     SELECT count(*) FROM tags WHERE id=? AND deleted=?
-                """, (tag.id, 0))
+                """, (tag['id'], 0))
                 if rows.fetchone()[0] == 0:
                     abort(400, description=consts.ResultMessage.TAG_NOT_FOUND)
 
@@ -298,14 +298,19 @@ def tags_list_or_register() -> Union[dict, Response]:
             # 取得
             if request.method == 'GET':
                 tags = cur.execute("""
-                    SELECT tags.id, tags.name, count(*) as used_count 
+                    SELECT tags.id, 
+                            tags.name, 
+                            count(notes.id) as used_count 
                         FROM tags 
-                        INNER JOIN junction_notes_tags
+                        LEFT OUTER JOIN junction_notes_tags
                             ON tags.id = junction_notes_tags.tag_id
-                        WHERE deleted=?
+                        LEFT OUTER JOIN notes
+                            ON notes.id = junction_notes_tags.note_id 
+                            AND notes.deleted=?
+                        WHERE tags.deleted=?
                         GROUP BY tags.id
                         ORDER BY used_count DESC
-                """, (0, ))
+                """, (0, 0))
                 res = [dict(zip(('id', 'name', 'used_count'), tag)) for tag in tags]
 
                 return jsonify(res)
@@ -331,7 +336,8 @@ def tags_list_or_register() -> Union[dict, Response]:
                 connection.commit()
                 return response(consts.ResultMessage.SUCCESS)
 
-    except sqlite3.Error:
+    except sqlite3.Error as e:
+        print(e)
         abort(500, description=consts.ResultMessage.DB)
 
 
