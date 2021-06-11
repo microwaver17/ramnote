@@ -301,9 +301,15 @@ def tags_list_or_register() -> Union[dict, Response]:
             # 取得
             if request.method == 'GET':
                 tags = cur.execute("""
-                    SELECT * FROM tags WHERE deleted=0
-                """)
-                res = [dict(zip(('id', 'name'), tag)) for tag in tags]
+                    SELECT tags.id, tags.name, count(*) as used_count 
+                        FROM tags 
+                        INNER JOIN junction_notes_tags
+                            ON tags.id = junction_notes_tags.tag_id
+                        WHERE deleted=?
+                        GROUP BY tags.id
+                        ORDER BY used_count DESC
+                """, (0, ))
+                res = [dict(zip(('id', 'name', 'used_count'), tag)) for tag in tags]
 
                 return jsonify(res)
 
