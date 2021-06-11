@@ -6,11 +6,11 @@
         class="
           modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg
         "
-        style="z-index: 2010"
+        style="max-width: 500px"
       >
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">Select Tags</h5>
+            <h5 class="modal-title">タグ選択</h5>
           </div>
 
           <div class="modal-body">
@@ -19,34 +19,65 @@
                 <div class="col-8 overflow-scroll">
                   <!-- 登録済みタグ一覧 -->
                   <div class="list-group" style="height: 50vh">
-                    <a
+                    <button
+                      style="outline: none"
                       v-for="tag in tagFiltered"
                       :key="tag.id"
                       @click="addTag(tag)"
                       class="list-group-item list-group-item-action"
                     >
-                      {{ tag.name }}
-                    </a>
+                      <div class="d-flex">
+                        <div>
+                          {{ tag.name }}
+                        </div>
+                        <div class="ms-auto">{{ tag.used_count }}件</div>
+                      </div>
+                    </button>
                   </div>
                 </div>
 
                 <div class="col-4">
-                  <label>Search</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    v-model="tagFilterKeyword"
-                  />
-                  <label>Add Tag</label>
-                  <input type="text" class="form-control" v-model="newTag" />
-                  <button class="form-control btn-primary" @click="createTag">
-                    Add
-                  </button>
+                  <div class="mb-4">
+                    <label class="form-label">絞り込み</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      v-model="tagFilterKeyword"
+                    />
+                  </div>
+                  <div class="mb-2">
+                    <label class="form-label">タグ追加</label>
+                    <input
+                      type="text"
+                      class="form-control mb-2"
+                      v-model="newTag"
+                    />
+                    <button class="form-control btn-primary" @click="createTag">
+                      追加
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              <div class="row border-top mt-3 pt-4 mb-2">
+              <div
+                class="
+                  row
+                  border-top border-top border-bottom
+                  mt-3
+                  mb-3
+                  pt-2
+                  pb-2
+                  mw-100
+                "
+              >
                 <div class="col-12">
+                  <span
+                    v-if="tags.length == 0"
+                    class="border rounded bg-primary text-white p-2 float-start"
+                    style="opacity: 0"
+                  >
+                    ダミー
+                  </span>
                   <span
                     v-for="tag in tags"
                     :key="tag.id"
@@ -61,10 +92,9 @@
                 </div>
               </div>
             </div>
-          </div>
-
-          <div class="modal-footer">
-            <button class="btn btn-primary" @click="close">OK</button>
+            <div class="d-flex">
+              <button class="btn btn-primary ms-auto" @click="close">OK</button>
+            </div>
           </div>
         </div>
       </div>
@@ -136,7 +166,7 @@ export default class TagPicker extends Vue {
 
   createTag() {
     const tagname = this.newTag
-    const tag = new Tag(null, tagname)
+    const tag = new Tag(null, tagname, -1)
     // タグをDBに登録後、タグ一覧をリクエストして、id を取得する
     // その後、新しく登録したタグを選択状態にする
     dao.createTag(tag)

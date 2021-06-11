@@ -1,10 +1,17 @@
 <!-- ノート1枚のカード -->
 <template>
   <div>
-    <div class="card">
+    <div class="card" style="width: 270px">
       <div class="card-body">
-        <div class="d-flex mb-1">
-          <strong class="">{{ note.title }}</strong>
+        <div class="d-flex">
+          <div class="main-contents">
+            <div>
+              <strong>{{ note.title }}</strong>
+            </div>
+            <div class="mb-1" style="white-space: pre-wrap">
+              {{ note.body }}
+            </div>
+          </div>
           <div class="dropdown ms-auto">
             <span
               id="menu"
@@ -27,13 +34,12 @@
             </ul>
           </div>
         </div>
-        <div class="mb-1" style="white-space: pre-wrap">{{ note.body }}</div>
-        <div>
-          <span class="h6">{{ date }}</span>
+        <div class="sub-contents">
+          <span class="h6 me-2">{{ date }}</span>
           <span
             v-for="tag in note.tags"
             :key="tag.id"
-            class="badge bg-secondary ms-2 fw-normal"
+            class="badge bg-secondary me-2 fw-normal"
             >{{ tag.name }}</span
           >
         </div>
@@ -81,7 +87,4 @@ export default class NoteCard extends Vue {
 </script>
 
 <style scoped>
-.card {
-  width: 300px;
-}
 </style>

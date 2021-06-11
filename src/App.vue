@@ -19,6 +19,7 @@
             <input
               type="search"
               class="form-control"
+              style="-webkit-appearance: searchfield-cancel-button"
               v-model="keyword"
               @keydown="keydownAtKeywordInput"
             />
@@ -103,7 +104,7 @@
       <TagPicker
         :tags="query_tags"
         :visible="isOpenTagPicker"
-        @close="isOpenTagPicker = false"
+        @close="tagPickerClosed"
       ></TagPicker>
     </div>
 
@@ -192,6 +193,11 @@ export default class App extends Vue {
     }
   }
 
+  tagPickerClosed() {
+    this.isOpenTagPicker = false
+    this.fetchNotes()
+  }
+
   showInitialPage() {
     this.keyword = ''
     this.query_tags = []
@@ -255,12 +261,13 @@ export default class App extends Vue {
   }
 
   commitCreate() {
-    if (!this.editNote.id) {  // id が null の時は新規作成
+    if (this.editNote.id == null) {  // id が null の時は新規作成
       this.editNote.date = new Date() // 改めて現在日時を格納
       dao.createNote(this.editNote)
         .then(res => {
           this.fetchNotes()
           this.flashSuccess('追加しました')
+          this.editNote = Note.empty()
         }).catch(err => {
           this.flashSuccess('失敗しました\n' + err.result)
         })
@@ -268,7 +275,7 @@ export default class App extends Vue {
   }
 
   commitUpdate() {
-    if (this.editNote.id) {
+    if (this.editNote.id != null) {
       dao.updateNote(this.editNote)
         .then(res => {
           this.fetchNotes()
@@ -277,7 +284,6 @@ export default class App extends Vue {
           this.flashSuccess('失敗しました\n' + err.result)
         })
     }
-    this.flashSuccess('追加しました')
   }
 
   mounted() {
@@ -288,6 +294,11 @@ export default class App extends Vue {
 </script>
 
 <style scoped>
+button:focus,
+.btn:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
 .sidebar {
   z-index: 100;
   position: fixed;
@@ -318,8 +329,5 @@ export default class App extends Vue {
   left: 200px;
   right: 0;
   margin: 10px;
-}
-input[type="search"] {
-  -webkit-appearance: searchfield-cancel-button;
 }
 </style>

@@ -23,7 +23,7 @@ export const dao = Object.freeze({
         return new Promise((resolve, reject) => {
             axios.get(api + 'tags')
                 .then(res => {
-                    const tags = (res.data as Array<any>).map(tag => new Tag(tag['id'], tag['name']))
+                    const tags = (res.data as Array<any>).map(tag => new Tag(tag['id'], tag['name'], tag['used_count']))
                     resolve(tags)
 
                 }).catch(err => {
@@ -42,7 +42,7 @@ export const dao = Object.freeze({
             axios.get(api + 'notes', { params: params })
                 .then(res => {
                     const notes = (res.data as Array<any>).map(note => {
-                        const tags = (note.tags as Array<any>).map(tag => new Tag(tag.id, tag.name))
+                        const tags = (note.tags as Array<any>).map(tag => new Tag(tag.id, tag.name, -1))
                         const date = new Date(note.date)    // DB側ではUNIX時間で格納しているので変換する
                         return new Note(note.id, note.title, note.body, date, tags)
                     })

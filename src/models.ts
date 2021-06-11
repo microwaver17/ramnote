@@ -23,15 +23,16 @@ export class Note {
 export class Tag {
     constructor(
         public id: number | null,   //nullなら新規作成
-        public name: string
+        public name: string,
+        public used_count: number
     ) { }
 
     clone() {
-        return new Tag(this.id, this.name)
+        return new Tag(this.id, this.name, this.used_count)
     }
 
     static empty(): Tag {
-        return new Tag(null, '')
+        return new Tag(null, '', -1)
     }
 }
 
