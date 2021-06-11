@@ -48,16 +48,6 @@ def response(result: str) -> dict:
     return {'result': result}
 
 
-def is_tag_exist(tag_id: int, cur: sqlite3.Cursor) -> bool:
-    """タグが tags テーブルに存在するか確認"""
-    ret = cur.execute("""
-        SELECT count(*) FROM tags WHERE id=? AND deleted=?
-    """, (tag_id, 0))
-    if ret.fetchone()[0] == 1:
-        return True
-    return False
-
-
 @app.errorhandler(HTTPException)
 def server_error(e: HTTPException) -> tuple[dict, int]:
     """サーバーエラーをJSONで返すハンドラ
@@ -166,8 +156,12 @@ def notes_list_or_register() -> Union[dict, Response]:
                 json: dict = request.json
 
                 # タグが存在するか確認
+                
                 for tag in json['tags']:
-                    if not is_tag_exist(tag['id'], cur):
+                    rows = cur.execute("""
+                        SELECT count(*) FROM tags WHERE id=? AND deleted=?
+                    """, (tag.id, 0))
+                    if rows.fetchone()[0] == 0:
                         abort(400, description=consts.ResultMessage.TAG_NOT_FOUND)
 
                 # 追加
@@ -220,7 +214,10 @@ def notes_update(pk) -> dict:
 
             # タグが存在するか確認
             for tag in json['tags']:
-                if not is_tag_exist(tag['id'], cur):
+                rows = cur.execute("""
+                    SELECT count(*) FROM tags WHERE id=? AND deleted=?
+                """, (tag.id, 0))
+                if rows.fetchone()[0] == 0:
                     abort(400, description=consts.ResultMessage.TAG_NOT_FOUND)
 
             cur.execute("""
@@ -320,10 +317,10 @@ def tags_list_or_register() -> Union[dict, Response]:
                 json: dict = request.json
 
                 # 重複タグが存在するか確認
-                res = cur.execute("""
-                    SELECT COUNT(*) FROM tags WHERE name=?
-                """, (json['name'], ))
-                if res.fetchone()[0] != 0:
+                rows = cur.execute("""
+                    SELECT count(*) FROM tags WHERE name=? AND deleted=?
+                """, (json['name'], 0))
+                if rows.fetchone()[0] == 1:
                     abort(400, description=consts.ResultMessage.TAG_DUPLICATED)
 
                 # 追加
