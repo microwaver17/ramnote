@@ -4,7 +4,12 @@
       <h3 class="mb-3">メモを追加</h3>
       <div class="mb-3">
         <label class="form-label">タイトル</label>
-        <input type="text" class="form-control" v-model="note.title" />
+        <input
+          type="text"
+          class="form-control"
+          placeholder="省略可"
+          v-model="note.title"
+        />
       </div>
       <div class="mb-3">
         <label class="form-label">本文</label>

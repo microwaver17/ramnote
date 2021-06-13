@@ -1,17 +1,27 @@
 <!-- ノート1枚のカード -->
 <template>
   <div>
-    <div class="card" style="width: 270px">
-      <div class="card-body">
-        <div class="d-flex">
-          <div class="main-contents">
-            <div>
-              <strong>{{ note.title }}</strong>
-            </div>
-            <div class="mb-1" style="white-space: pre-wrap">
-              {{ note.body }}
-            </div>
+    <div class="card" style="width: 320px">
+      <div class="card-body p-2">
+        <div class="main-contents">
+          <div>
+            <strong>{{ note.title }}</strong>
           </div>
+          <div class="mb-1" style="white-space: pre-wrap">
+            {{ note.body }}
+          </div>
+        </div>
+        <div class="mb-1">
+          <span
+            v-for="tag in note.tags"
+            :key="tag.id"
+            class="badge bg-secondary me-1 fw-normal"
+            >{{ tag.name }}</span
+          >
+        </div>
+        <div class="d-flex align-items-center">
+          <div class="h6 m-0">{{ date }}</div>
+
           <div class="dropdown ms-auto">
             <span
               id="menu"
@@ -33,15 +43,6 @@
               </li>
             </ul>
           </div>
-        </div>
-        <div class="sub-contents">
-          <span class="h6 me-2">{{ date }}</span>
-          <span
-            v-for="tag in note.tags"
-            :key="tag.id"
-            class="badge bg-secondary me-2 fw-normal"
-            >{{ tag.name }}</span
-          >
         </div>
       </div>
     </div>
