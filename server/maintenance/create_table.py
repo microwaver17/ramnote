@@ -7,6 +7,8 @@ import config   # noqa
 
 if __name__ == '__main__':
     db_path = config.db_path
+    if not db_path.parent.exists():
+        db_path.parent.mkdir()
     print(f'DBオープン\n{db_path}\n')
 
     connection = sqlite3.connect(db_path)

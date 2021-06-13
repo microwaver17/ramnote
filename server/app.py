@@ -160,7 +160,7 @@ def notes_list_or_register() -> Union[dict, Response]:
                 for tag in json['tags']:
                     rows = cur.execute("""
                         SELECT count(*) FROM tags WHERE id=? AND deleted=?
-                    """, (tag.id, 0))
+                    """, (tag['id'], 0))
                     if rows.fetchone()[0] == 0:
                         abort(400, description=consts.ResultMessage.TAG_NOT_FOUND)
 
