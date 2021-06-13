@@ -100,15 +100,14 @@ def notes_list_or_register() -> Union[dict, Response]:
                 tag_ids = extract_tags(tag_ids_str)
 
                 print(request.full_path)
-                params = [0, 0, f'%{keyword}%', f'%{keyword}%']
+                params = [0, f'%{keyword}%', f'%{keyword}%']
                 sql = """
                     SELECT GROUP_CONCAT(tags.id) as tag_ids_str, * FROM notes
-                        INNER JOIN junction_notes_tags
+                        LEFT OUTER JOIN junction_notes_tags
                             on notes.id = junction_notes_tags.note_id
-                        INNER JOIN tags
+                        LEFT OUTER JOIN tags
                             on tags.id = junction_notes_tags.tag_id
                         WHERE notes.deleted=?
-                            AND tags.deleted=?
                             AND (notes.title LIKE ? OR notes.body LIKE ?) 
                 """
                 if date_from != -1:
