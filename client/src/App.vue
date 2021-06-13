@@ -66,7 +66,7 @@
       </div>
 
       <!-- メインカラム -->
-      <div class="contents">
+      <div class="contents overflow-scroll">
         <!-- アラート -->
         <div class="alert alert-success" v-show="successMsg">
           {{ successMsg }}
@@ -280,6 +280,7 @@ export default class App extends Vue {
         .then(res => {
           this.fetchNotes()
           this.flashSuccess('更新しました')
+          this.currentTab = this.tabname.notelist
         }).catch(err => {
           this.flashSuccess('失敗しました\n' + err.result)
         })

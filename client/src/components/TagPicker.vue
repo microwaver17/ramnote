@@ -16,7 +16,7 @@
           <div class="modal-body">
             <div class="container-fluid">
               <div class="row">
-                <div class="col-8 overflow-scroll">
+                <div id="tagpicker_taglist" class="col-8 overflow-scroll">
                   <!-- 登録済みタグ一覧 -->
                   <div class="list-group" style="height: 50vh">
                     <button
@@ -24,7 +24,7 @@
                       v-for="tag in tagFiltered"
                       :key="tag.id"
                       @click="addTag(tag)"
-                      class="list-group-item list-group-item-action"
+                      class="list-group-item list-group-item-action pt-1 pb-1"
                     >
                       <div class="d-flex">
                         <div>
@@ -40,8 +40,9 @@
                   <div class="mb-4">
                     <label class="form-label">絞り込み</label>
                     <input
-                      type="text"
+                      type="search"
                       class="form-control"
+                      style="-webkit-appearance: searchfield-cancel-button"
                       v-model="tagFilterKeyword"
                     />
                   </div>
@@ -145,16 +146,25 @@ export default class TagPicker extends Vue {
   }
 
   changeVisibility() {
-    // 表示時にタグ一覧を取得
     if (this.visible) {
+      this.tagFilterKeyword = ''
+      this.newTag = ''
+      // IDかぶりでうまく行かない
+      // const taglist = document.getElementById('tagpicker_taglist')
+      // if (taglist) {
+      //   taglist.scrollTop = 0
+      // }
+      // 表示時にタグ一覧を取得
       dao.getTags().then(tags => this.availableTags = tags)
     }
   }
 
   // タグを追加する
   addTag(tag: Tag): void {
-    if (!this.tags.includes(tag)) {
+    const match_tag = this.tags.filter(_tag => _tag.id == tag.id)
+    if (match_tag.length == 0) {
       this.tags.push(tag)
+      this.tagFilterKeyword = ''
     }
   }
 
@@ -176,6 +186,7 @@ export default class TagPicker extends Vue {
           if (tag) {
             this.addTag(tag)
             this.availableTags = tags
+            this.newTag = ''
           } else {
             console.error('タグ登録失敗')
           }

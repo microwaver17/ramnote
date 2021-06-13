@@ -15,7 +15,7 @@
           <span
             v-for="tag in note.tags"
             :key="tag.id"
-            class="badge bg-secondary me-1 fw-normal"
+            class="badge bg-success me-1 fw-normal"
             >{{ tag.name }}</span
           >
         </div>
