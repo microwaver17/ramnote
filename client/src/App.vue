@@ -212,10 +212,6 @@ export default class App extends Vue {
     this.isOpenTagPicker = true
   }
 
-  showNoteList(e: MouseEvent) {
-    this.currentTab = this.tabname.notelist
-  }
-
   showEditorCreate(e: MouseEvent) {
     this.editNote = Note.empty()
     this.currentTab = this.tabname.editor
