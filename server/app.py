@@ -405,9 +405,8 @@ def export_csv():
                     INNER JOIN tags
                         on tags.id = junction_notes_tags.tag_id
                     WHERE notes.deleted=?
-                        AND tags.deleted=?
                     GROUP BY notes.id
-            """, (0, 0))
+            """, (0, ))
 
             lines: list[str] = []
             lines.append(','.join([csv_escape(head) for head in ['タイトル', '本文', 'タグ', '日付']]))

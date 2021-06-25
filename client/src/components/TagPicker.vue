@@ -149,13 +149,16 @@ export default class TagPicker extends Vue {
     if (this.visible) {
       this.tagFilterKeyword = ''
       this.newTag = ''
-      // IDかぶりでうまく行かない
-      // const taglist = document.getElementById('tagpicker_taglist')
-      // if (taglist) {
-      //   taglist.scrollTop = 0
-      // }
       // 表示時にタグ一覧を取得
-      dao.getTags().then(tags => this.availableTags = tags)
+      dao.getTags().then(tags => {
+        this.availableTags = tags
+        // タグ一覧を一番上にスクロール 
+        // idかぶりで動かない
+        // const taglist = document.getElementById('tagpicker_taglist')
+        // if (taglist) {
+        //   taglist.scrollTop = 0
+        // }
+      })
     }
   }
 
