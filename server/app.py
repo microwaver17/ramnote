@@ -431,3 +431,6 @@ def export_csv():
 
     except sqlite3.Error:
         abort(500, description=consts.ResultMessage.DB)
+
+if __name__ == '__main__':
+    app.run('127.0.0.1', consts.PORT, debug=False)
