@@ -1,6 +1,7 @@
 import axios, { AxiosResponse, Method } from 'axios'
 
 import { config } from './config'
+import { consts } from './consts';
 import { Note, Tag, ServerResponse } from './models'
 
 const api = () => config.apiRoot;
@@ -15,7 +16,7 @@ function getErrorResponse(err: any) {
         }
     }
     console.error(err)
-    return new ServerResponse('クライアントエラー')
+    return new ServerResponse('クライアントエラー ' + config.apiRoot)
 }
 
 export const dao = Object.freeze({

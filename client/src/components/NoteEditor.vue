@@ -1,7 +1,8 @@
 <template>
   <div>
     <div class="editor mt-1">
-      <h3 class="mb-3">メモを追加</h3>
+      <h3 class="mb-3" v-if="note.id == null">メモを追加</h3>
+      <h3 class="mb-3" v-else>メモを編集</h3>
       <div class="mb-3">
         <label class="form-label">タイトル</label>
         <input
@@ -100,7 +101,8 @@ export default class NoteEditor extends Vue {
 
 <style scoped>
 .editor {
-  margin: 0 auto;
+  padding-top: 10px;
+  padding-left: 50px;
   max-width: 500px;
 }
 </style>

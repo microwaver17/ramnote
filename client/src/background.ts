@@ -3,6 +3,8 @@
 import { app, protocol, BrowserWindow, Menu } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
+import { execFile, ChildProcess } from 'child_process'
+import { join, dirname, normalize } from 'path'
 
 import { consts } from './consts'
 
@@ -69,6 +71,8 @@ app.on('ready', async () => {
       console.error('Vue Devtools failed to install:', e.toString())
     }
   }
+
+
   Menu.setApplicationMenu(null);
   createWindow()
 })
@@ -78,12 +82,30 @@ if (isDevelopment) {
   if (process.platform === 'win32') {
     process.on('message', (data) => {
       if (data === 'graceful-exit') {
+        serverProcess.kill(); //サーバー終了
         app.quit()
       }
     })
   } else {
     process.on('SIGTERM', () => {
+      serverProcess.kill(); //サーバー終了
       app.quit()
     })
   }
 }
+
+// サーバーを実行
+const exepath = dirname(app.getPath('exe'))
+let serverPath = '../server/app.py'
+let pythonPath: string
+if (process.env.NODE_ENV == 'development') {
+  pythonPath = '../server/venv/Scripts/python.exe'
+  serverPath = '../server/app.py'
+} else {
+  pythonPath = join(exepath, 'python/python.exe')
+  serverPath = join(exepath, 'server/app.py')
+}
+let serverProcess = execFile(pythonPath, [serverPath])
+console.log('execute server')
+console.log(pythonPath)
+console.log(serverPath)
