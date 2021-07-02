@@ -1,3 +1,5 @@
+PORT = 51803
+
 class ResultMessage:
     """エラー原因を表す文字列定義"""
 

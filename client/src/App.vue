@@ -232,12 +232,22 @@ export default class App extends Vue {
     }
   }
 
-  fetchNotes() {
+  fetchNotes(retry = 0) {
     dao.getNotes(this.keyword, this.query_tags)
       .then(notes => this.notes = notes)
       .catch(err => {
         this.flashError(err.result)
-        console.log(err)
+
+        // リトライ処理
+        // Electronの初期読み込みに、Serverの初期化が間に合ってないとき
+        // エラーが帰ってくる
+        if (retry > 0) {
+          new Promise(r => setTimeout(r, 1000))
+            .then(() => this.fetchNotes(retry - 1))
+        }
+        if (retry == 0) {
+          console.log(err)
+        }
         // 開発環境の場合は、ダミーデータを表示
         // if (process.env.NODE_ENV == 'development') {
         //   this.notes = consts.dummyNotes.slice()
@@ -284,7 +294,7 @@ export default class App extends Vue {
   }
 
   mounted() {
-    this.fetchNotes()
+    this.fetchNotes(50)
   }
 }
 

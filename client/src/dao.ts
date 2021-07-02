@@ -1,9 +1,10 @@
-import axios, { AxiosResponse } from 'axios'
+import axios, { AxiosResponse, Method } from 'axios'
 
 import { config } from './config'
+import { consts } from './consts';
 import { Note, Tag, ServerResponse } from './models'
 
-const api = config.apiRoot
+const api = () => config.apiRoot;
 
 // サーバーエラーと then 内のエラーの両方に対応する
 function getErrorResponse(err: any) {
@@ -15,13 +16,13 @@ function getErrorResponse(err: any) {
         }
     }
     console.error(err)
-    return new ServerResponse('クライアントエラー')
+    return new ServerResponse('クライアントエラー ' + config.apiRoot)
 }
 
 export const dao = Object.freeze({
     getTags(): Promise<Tag[]> {
         return new Promise((resolve, reject) => {
-            axios.get(api + 'tags')
+            axios.get(api() + 'tags')
                 .then(res => {
                     const tags = (res.data as Array<any>).map(tag => new Tag(tag['id'], tag['name'], tag['used_count']))
                     resolve(tags)
@@ -39,7 +40,7 @@ export const dao = Object.freeze({
             if (tags.length > 0) { params['tag-ids'] = tags.map(tag => tag.id).join(',') }
             if (date_from >= 0) { params['date-from'] = date_from }
             if (date_to >= 0) { params['date-to'] = date_to }
-            axios.get(api + 'notes', { params: params })
+            axios.get(api() + 'notes', { params: params })
                 .then(res => {
                     const notes = (res.data as Array<any>).map(note => {
                         const tags = (note.tags as Array<any>).map(tag => new Tag(tag.id, tag.name, -1))
@@ -58,7 +59,7 @@ export const dao = Object.freeze({
         return new Promise((resolve, reject) => {
             const sendData: any = Object.assign({}, note)
             sendData.date = sendData.date.getTime()     // DB側ではUNIX時間で格納しているので変換する
-            axios.post(api + 'notes', sendData)
+            axios.post(api() + 'notes', sendData)
                 .then(res => {
                     resolve(new ServerResponse(res.data.result))
                 }).catch(err => {
@@ -71,7 +72,7 @@ export const dao = Object.freeze({
         return new Promise((resolve, reject) => {
             const sendData: any = Object.assign({}, note)
             sendData.date = sendData.date.getTime()     // DB側ではUNIX時間で格納しているので変換する
-            axios.post(api + 'notes/' + sendData.id, sendData)
+            axios.post(api() + 'notes/' + sendData.id, sendData)
                 .then(res => {
                     resolve(new ServerResponse(res.data.result))
                 }).catch(err => {
@@ -82,7 +83,7 @@ export const dao = Object.freeze({
 
     deleteNote(note: Note): Promise<ServerResponse> {
         return new Promise((resolve, reject) => {
-            axios.post(api + 'notes/' + note.id + '/delete')
+            axios.post(api() + 'notes/' + note.id + '/delete')
                 .then(res => {
                     resolve(new ServerResponse(res.data.result))
                 }).catch(err => {
@@ -93,7 +94,7 @@ export const dao = Object.freeze({
 
     createTag(tag: Tag): Promise<ServerResponse> {
         return new Promise((resolve, reject) => {
-            axios.post(api + 'tags', tag)
+            axios.post(api() + 'tags', tag)
                 .then(res => {
                     resolve(new ServerResponse(res.data.result))
                 }).catch(err => {
