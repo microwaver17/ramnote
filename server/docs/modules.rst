@@ -7,3 +7,4 @@ server
    app
    config
    consts
+   preparetable

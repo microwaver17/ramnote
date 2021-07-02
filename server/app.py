@@ -1,5 +1,8 @@
-import datetime
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent)) # embedded python で起動するためpy
 
+import datetime
 from flask import Flask, request, abort, jsonify, Response, make_response
 from werkzeug.exceptions import HTTPException
 from typing import Union, Optional
@@ -7,8 +10,10 @@ import sqlite3
 from contextlib import closing
 from datetime import datetime
 
+
 import config
 import consts
+from preparetable import prepare_table
 
 app = Flask(__name__)
 
@@ -433,4 +438,5 @@ def export_csv():
         abort(500, description=consts.ResultMessage.DB)
 
 if __name__ == '__main__':
+    prepare_table()
     app.run('127.0.0.1', consts.PORT, debug=False)
