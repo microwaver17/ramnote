@@ -48,7 +48,7 @@ def download(url: str, savepath: Path):
 
 if __name__ == '__main__':
     cwd = Path(__file__).parent.resolve()
-    dist = cwd / 'dist'
+    dist = cwd / 'dist_desktop'
     tmp = cwd / 'tmp'
     pythondir = tmp / 'python'
 
