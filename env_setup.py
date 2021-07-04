@@ -30,6 +30,3 @@ if __name__ == '__main__':
     exec(str(venv / 'pip') + ' install -r requirements.txt', cwd / 'server')
 
     print('build success!')
-    print('press enter to continue')
-    input()
-    exit()

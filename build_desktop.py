@@ -98,8 +98,5 @@ if __name__ == '__main__':
     shutil.move(tmp / 'client', dist)
     shutil.move(tmp / 'server', dist / 'server')
     shutil.copytree(pythondir, dist / 'python')
-
+    
     print('build success!')
-    print('press enter to continue')
-    input()
-    exit()
