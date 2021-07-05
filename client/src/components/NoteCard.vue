@@ -22,26 +22,20 @@
         <div class="d-flex align-items-center">
           <div class="h6 m-0">{{ date }}</div>
 
-          <div class="dropdown ms-auto">
+          <div class="ms-auto">
             <span
-              id="menu"
+              class="me-2"
               style="cursor: pointer; vertical-align: middle"
-              data-bs-toggle="dropdown"
-              aria-expanded="false"
+              @click="emitDelete"
             >
-              <img src="@/assets/three-dots.svg" />
+              <img src="@/assets/x.svg" style="width: 1.2em; height: 1.2em" />
             </span>
-            <!-- ドロップダウンメニュー -->
-            <ul class="dropdown-menu" aria-labelledby="menu">
-              <li>
-                <button class="dropdown-item" @click="emitEdit">Edit</button>
-              </li>
-              <li>
-                <button class="dropdown-item" @click="emitDelete">
-                  Delete
-                </button>
-              </li>
-            </ul>
+            <span
+              style="cursor: pointer; vertical-align: middle"
+              @click="emitEdit"
+            >
+              <img src="@/assets/pencil-fill.svg" />
+            </span>
           </div>
         </div>
       </div>
