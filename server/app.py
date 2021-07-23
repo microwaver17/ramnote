@@ -389,6 +389,11 @@ def export_csv():
 
     URL
         /api/export/csv
+    GET
+        * keyword (str)
+        * tag-ids (str) idのコンマ区切り
+        * date-from (int)
+        * date-to (int)
 
     Returns:
         Response: レスポンス

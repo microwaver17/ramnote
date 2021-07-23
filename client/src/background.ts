@@ -8,7 +8,7 @@ import { join, dirname, normalize } from 'path'
 
 import { consts } from './consts'
 
-const isDevelopment = process.env.NODE_ENV !== 'development'
+const isDevelopment = process.env.NODE_ENV === 'development'
 
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
@@ -71,7 +71,6 @@ app.on('ready', async () => {
       console.error('Vue Devtools failed to install:', e.toString())
     }
   }
-
 
   Menu.setApplicationMenu(null);
   createWindow()
