@@ -1,3 +1,5 @@
+import { Note } from "./models"
+
 const uidLen = 32
 
 export const util = Object.freeze({

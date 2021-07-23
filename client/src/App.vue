@@ -175,7 +175,11 @@ export default class App extends Vue {
   }
 
   get csvUrl() {
-    return config.apiRoot + 'export/csv'
+    let tagIds = this.query_tags.map(tag => tag.id).join(',')
+    let params = ''
+    params += 'keyword=' + encodeURIComponent(this.keyword)
+    params += '&tag-ids=' + encodeURIComponent(tagIds)
+    return config.apiRoot + 'export/csv?' + params
   }
 
   flashError(msg: string, time = 3) {

@@ -398,23 +398,49 @@ def export_csv():
         with closing(sqlite3.connect(config.db_path)) as connection:
             connection.row_factory = sqlite3.Row
             cur = connection.cursor()
-            notes = cur.execute("""
-                SELECT
+
+            keyword = request.args.get('keyword', '')
+            tag_ids_str = request.args.get('tag-ids', '')
+            date_from = request.args.get('date-from', -1)
+            date_to = request.args.get('date-to', -1)
+            tag_ids = extract_tags(tag_ids_str)
+
+            print(request.full_path)
+            params = [0, f'%{keyword}%', f'%{keyword}%', f'%{keyword}%']
+
+            sql = """
+                SELECT 
                         notes.title as title, 
                         notes.body as body, 
                         GROUP_CONCAT(tags.name, ',') as tags,
                         notes.date as date 
                     FROM notes
-                    INNER JOIN junction_notes_tags
+                    LEFT OUTER JOIN junction_notes_tags
                         on notes.id = junction_notes_tags.note_id
-                    INNER JOIN tags
+                    LEFT OUTER JOIN tags
                         on tags.id = junction_notes_tags.tag_id
                     WHERE notes.deleted=?
+                        AND (notes.title LIKE ? OR notes.body LIKE ? OR tags.name LIKE ?) 
+            """
+            if date_from != -1:
+                sql += 'AND notes.date > ?\n'
+                params.append(jstime_to_dbtime(date_from))
+            if date_to != -1:
+                sql += 'AND notes.date < ?\n'
+                params.append(jstime_to_dbtime(date_to))
+            if len(tag_ids) > 0:
+                sql += 'AND tags.id IN(' + ','.join(['?' for i in range(len(tag_ids))]) + ')\n'
+                params += tag_ids
+            sql += """
                     GROUP BY notes.id
-            """, (0, ))
+                    ORDER BY notes.date DESC
+            """
+            print(sql)
+            print(params)
 
-            lines: list[str] = []
-            lines.append(','.join([csv_escape(head) for head in ['タイトル', '本文', 'タグ', '日付']]))
+            notes = cur.execute(sql, params).fetchall()
+
+            lines: list[str] = [','.join([csv_escape(head) for head in ['タイトル', '本文', 'タグ', '日付']])]
             for note in notes:
                 line = []
                 line.append(note['title'])

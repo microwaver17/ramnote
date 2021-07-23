@@ -8,7 +8,7 @@ import { join, dirname, normalize } from 'path'
 
 import { consts } from './consts'
 
-const isDevelopment = process.env.NODE_ENV !== 'production'
+const isDevelopment = process.env.NODE_ENV !== 'development'
 
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
@@ -78,34 +78,24 @@ app.on('ready', async () => {
 })
 
 // Exit cleanly on request from parent process in development mode.
-if (isDevelopment) {
-  if (process.platform === 'win32') {
-    process.on('message', (data) => {
-      if (data === 'graceful-exit') {
-        serverProcess.kill(); //サーバー終了
-        app.quit()
-      }
-    })
-  } else {
-    process.on('SIGTERM', () => {
-      serverProcess.kill(); //サーバー終了
-      app.quit()
-    })
-  }
+if (!isDevelopment) {
+  process.on('SIGTERM', () => {
+    serverProcess.kill(); //サーバー終了
+    app.quit()
+  })
 }
 
 // サーバーを実行
 const exepath = dirname(app.getPath('exe'))
 let serverPath = '../server/app.py'
 let pythonPath: string
-if (process.env.NODE_ENV == 'development') {
-  pythonPath = '../server/venv/Scripts/python.exe'
-  serverPath = '../server/app.py'
-} else {
+let serverProcess: ChildProcess
+if (!isDevelopment) {
   pythonPath = join(exepath, 'python/python.exe')
   serverPath = join(exepath, 'server/app.py')
+  let serverProcess = execFile(pythonPath, [serverPath])  
+
+  console.log('execute server')
+  console.log(pythonPath)
+  console.log(serverPath)
 }
-let serverProcess = execFile(pythonPath, [serverPath])
-console.log('execute server')
-console.log(pythonPath)
-console.log(serverPath)
