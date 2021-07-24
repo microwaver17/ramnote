@@ -3,7 +3,7 @@
     <!-- サイドバー・検索 -->
     <div>
       <div class="sidebar">
-        <div class="mt-1 mb-3">
+        <div class="p-2">
           <!-- ロゴ RAMNOTE -->
           <img
             src="@/assets/ramnote.svg"
@@ -13,7 +13,7 @@
           />
         </div>
 
-        <div class="mb-3 pb-3 border-bottom">
+        <div class="p-2">
           <div class="mb-3">
             <label class="form-label">キーワード</label>
             <input
@@ -38,18 +38,21 @@
             />
           </div>
 
-          <button class="btn btn-light form-control" @click="fetchNotes">
+          <button class="mb-3 btn btn-light form-control" @click="fetchNotes">
             検索
           </button>
+
+          <div class="mb-3 pt-3 border-top">
+            <button
+              class="btn btn-light form-control"
+              @click="showEditorCreate"
+            >
+              メモを追加
+            </button>
+          </div>
         </div>
 
-        <div class="mb-3">
-          <button class="btn btn-light form-control" @click="showEditorCreate">
-            メモを追加
-          </button>
-        </div>
-
-        <div class="mb-3">
+        <div class="p-2" style="position: absolute; bottom: 0; width: 100%">
           <a :href="csvUrl" class="btn btn-light form-control">
             CSVエクスポート
           </a>
@@ -162,7 +165,9 @@ export default class App extends Vue {
   editNote: Note = Note.empty()
 
   query_tags: Tag[] = []
+  currentQueryTags: Tag[] = []
   keyword = ''
+  currentKeyword = ''
 
   currentTab = this.tabname.notelist  // メインカラムに表示するもの
   successMsg = ''
@@ -175,9 +180,9 @@ export default class App extends Vue {
   }
 
   get csvUrl() {
-    let tagIds = this.query_tags.map(tag => tag.id).join(',')
+    let tagIds = this.currentQueryTags.map(tag => tag.id).join(',')
     let params = ''
-    params += 'keyword=' + encodeURIComponent(this.keyword)
+    params += 'keyword=' + encodeURIComponent(this.currentKeyword)
     params += '&tag-ids=' + encodeURIComponent(tagIds)
     return config.apiRoot + 'export/csv?' + params
   }
@@ -238,7 +243,11 @@ export default class App extends Vue {
 
   fetchNotes(retry = 0) {
     dao.getNotes(this.keyword, this.query_tags)
-      .then(notes => this.notes = notes)
+      .then(notes => {
+        this.notes = notes
+        this.currentKeyword = this.keyword
+        this.currentQueryTags = this.query_tags
+      })
       .catch(err => {
         this.flashError(err.result)
 
@@ -317,7 +326,6 @@ button:focus,
   left: 0;
   bottom: 0;
   width: 200px;
-  padding: 10px;
 
   color: #ffffff;
   background-color: #313131;
