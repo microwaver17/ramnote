@@ -3,7 +3,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent)) # embedded python で起動するためpy
 
 import datetime
-from flask import Flask, request, abort, jsonify, Response, make_response
+from flask import Flask, request, abort, jsonify, Response, make_response, redirect
 from werkzeug.exceptions import HTTPException
 from typing import Union, Optional
 import sqlite3
@@ -66,6 +66,12 @@ def server_error(e: HTTPException) -> tuple[dict, int]:
     """
     cause = e.description if e.description is not None else consts.ResultMessage.UNKNOWN
     return response(cause), e.code
+
+
+@app.route('/', methods=['GET'])
+def redirect_to_top():
+    """URLのルートへのアクセスを、static/index.html にリダイレクト"""
+    return redirect('./static/index.html')
 
 
 @app.route('/api/notes', methods=['GET', 'POST'])
