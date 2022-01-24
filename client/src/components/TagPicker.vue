@@ -106,99 +106,102 @@
 </template>
 
 <script lang="ts">
-import { Options, Vue } from 'vue-class-component'
-import bootstrap from 'bootstrap'
-import { dao } from '../dao'
-import { Tag } from '../models'
-import { consts } from '../consts'
+import { Options, Vue } from "vue-class-component";
+import { dao } from "../dao";
+import { Tag } from "../models";
 
 @Options({
   props: {
     tags: {
       type: Array,
-      default: []
+      default: [],
     },
     visible: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   watch: {
     visible() {
-      this.changeVisibility()
-    }
-  }
+      this.changeVisibility();
+    },
+  },
 })
 export default class TagPicker extends Vue {
-  tags!: Tag[] // 選択中のタグ一覧
-  visible!: boolean
+  tags!: Tag[]; // 選択中のタグ一覧
+  visible!: boolean;
 
-  availableTags: Tag[] = []
-  tagFilterKeyword = ''
-  newTag = ''
+  availableTags: Tag[] = [];
+  tagFilterKeyword = "";
+  newTag = "";
 
   get tagFiltered(): Tag[] {
-    return this.availableTags.filter(tag => tag.name.toLowerCase().includes(this.tagFilterKeyword.toLowerCase()))
+    return this.availableTags.filter((tag) =>
+      tag.name.toLowerCase().includes(this.tagFilterKeyword.toLowerCase())
+    );
   }
 
-  close() {
-    this.$emit('close')
+  close(): void {
+    this.$emit("close");
   }
 
-  changeVisibility() {
+  changeVisibility(): void {
     if (this.visible) {
-      this.tagFilterKeyword = ''
-      this.newTag = ''
+      this.tagFilterKeyword = "";
+      this.newTag = "";
       // 表示時にタグ一覧を取得
-      dao.getTags().then(tags => {
-        this.availableTags = tags
-        // タグ一覧を一番上にスクロール 
+      dao.getTags().then((tags) => {
+        this.availableTags = tags;
+        // タグ一覧を一番上にスクロール
         // idかぶりで動かない
         // const taglist = document.getElementById('tagpicker_taglist')
         // if (taglist) {
         //   taglist.scrollTop = 0
         // }
-      })
+      });
     }
   }
 
   // タグを追加する
   addTag(tag: Tag): void {
-    const match_tag = this.tags.filter(_tag => _tag.id == tag.id)
+    const match_tag = this.tags.filter((_tag) => _tag.id == tag.id);
     if (match_tag.length == 0) {
-      this.tags.push(tag)
-      this.tagFilterKeyword = ''
+      this.tags.push(tag);
+      this.tagFilterKeyword = "";
     }
   }
 
   // タグを選択から削除する
   removeTag(tag: Tag): void {
-    let idx = this.tags.indexOf(tag)
-    this.tags.splice(idx, 1)
+    let idx = this.tags.indexOf(tag);
+    this.tags.splice(idx, 1);
   }
 
-  createTag() {
-    const tagname = this.newTag
-    const tag = new Tag(null, tagname, -1)
+  createTag(): void {
+    const tagname = this.newTag;
+    const tag = new Tag(null, tagname, -1);
     // タグをDBに登録後、タグ一覧をリクエストして、id を取得する
     // その後、新しく登録したタグを選択状態にする
-    dao.createTag(tag)
-      .then(res => dao.getTags()
-        .then(tags => {
-          const tag = tags.find(tag => tag.name == tagname)
-          if (tag) {
-            this.addTag(tag)
-            this.availableTags = tags
-            this.newTag = ''
-          } else {
-            console.error('タグ登録失敗')
-          }
-        })
-        .catch(err => console.error(err.result)))
-      .catch(err => console.error(err.result))
+    dao
+      .createTag(tag)
+      .then((res) =>
+        dao
+          .getTags()
+          .then((tags) => {
+            const tag = tags.find((tag) => tag.name == tagname);
+            if (tag) {
+              this.addTag(tag);
+              this.availableTags = tags;
+              this.newTag = "";
+            } else {
+              console.error("タグ登録失敗");
+            }
+          })
+          .catch((err) => console.error(err.result))
+      )
+      .catch((err) => console.error(err.result));
   }
 }
 </script>
 
-<style scoped>
-</style>
+<style scoped></style>

@@ -46,40 +46,40 @@
 <script lang="ts">
 import { Options, Vue } from "vue-class-component";
 
-import { Note } from "../models"
-import NoteEditor from "./NoteEditor.vue"
+import { Note } from "../models";
+import NoteEditor from "./NoteEditor.vue";
 
 @Options({
-  emits: ['edit', 'delete'],
+  emits: ["edit", "delete"],
   components: {
     NoteEditor,
   },
   props: {
-    note: Note
+    note: Note,
   },
 })
 export default class NoteCard extends Vue {
-  note!: Note
+  note!: Note;
 
   get date(): string {
-    let s = '' +
+    let s =
+      "" +
       this.note.date.getFullYear() +
-      '/' +
+      "/" +
       (this.note.date.getMonth() + 1) +
-      '/' +
-      this.note.date.getDate()
+      "/" +
+      this.note.date.getDate();
 
-    return s
+    return s;
   }
 
-  emitEdit() {
-    this.$emit('edit', this.note)
+  emitEdit(): void {
+    this.$emit("edit", this.note);
   }
-  emitDelete() {
-    this.$emit('delete', this.note)
+  emitDelete(): void {
+    this.$emit("delete", this.note);
   }
 }
 </script>
 
-<style scoped>
-</style>
+<style scoped></style>
